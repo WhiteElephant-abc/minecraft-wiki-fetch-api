@@ -10,6 +10,8 @@ const config = {
   server: {
     port: parseInt(process.env.PORT) || 3000,
     nodeEnv: process.env.NODE_ENV || 'development',
+    autoPort: process.env.AUTO_PORT !== 'false', // Enable automatic port selection
+    maxPortAttempts: parseInt(process.env.MAX_PORT_ATTEMPTS) || 100, // Max ports to try
   },
 
   // Wiki Configuration

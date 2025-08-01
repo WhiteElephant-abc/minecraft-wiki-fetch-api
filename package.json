@@ -15,7 +15,8 @@
     "test:search": "node test-search.js",
     "test:page": "node test-page.js",
     "test:demo": "node test-all.js",
-    "test:api": "node test-api.js"
+    "test:api": "node test-api.js",
+    "test:port": "node test-port-manager.js"
   },
   "keywords": [
     "minecraft",
