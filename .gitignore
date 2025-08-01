@@ -2,3 +2,5 @@
 .claude
 
 docs/*
+node_modules
+example
