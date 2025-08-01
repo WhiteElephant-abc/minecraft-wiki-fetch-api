@@ -20,7 +20,7 @@ class PageContentParser {
                 '.metadata',                 // 元数据
                 '.stub',                     // 小作品标记
                 '.ambox',                    // 消息框（部分）
-                '.hatnote',                  // 消歧义链接
+                '.hatnote',                  // 消歧义link
                 '.mw-jump-link',            // 跳转链接
                 '.printfooter',             // 打印页脚
                 '.catlinks',                // 分类链接
@@ -28,7 +28,35 @@ class PageContentParser {
                 'script',                   // 脚本
                 'style',                    // 样式
                 '.reference .mw-reflink-text', // 参考文献链接文本
-                '.mw-cite-backlink'         // 引用回链
+                '.mw-cite-backlink',        // 引用回链
+                '.toctogglespan',           // 目录折叠按钮
+                '.toctogglelabel',          // 目录折叠标签
+                '.mw-selflink',             // 自链接
+                '.searchaux',               // 搜索辅助元素
+                '.sprite-file',             // 精灵文件
+                '.pixel-image',             // 像素图片容器
+                'link[rel="mw-deduplicated-inline-style"]', // 重复样式链接
+                '.cite-bracket',            // 引用括号
+                '.nowrap',                  // 不换行容器
+                '.loot-chest-container .wikitable tbody tr:first-child', // 表格标题行（简化战利品表格）
+                '.mw-parser-output > .mw-empty-elt', // 空的解析器输出元素
+                '.mw-references-wrap',      // 参考文献包装器
+                '.reflist',                 // 参考文献列表
+                '.citation',                // 引用标签
+                '.noprint',                 // 不打印元素
+                '.mw-collapsible-toggle',   // 折叠切换按钮
+                '.wikitable-caption',       // 表格标题（某些多余的）
+                '.mw-headline-anchor',      // 标题锚点
+                '.mw-cite-backlink',        // 回引链接
+                '.mw-reference-text',       // 参考文献文本
+                '.NavFrame',                // 导航框架
+                '.NavHead',                 // 导航头
+                '.collapseButton',          // 折叠按钮
+                'sup.reference',            // 上标参考文献
+                'span.mw-reflink-text',     // 参考链接文本
+                '.external.text',           // 外部链接文本标记
+                '.mw-headline-number',      // 标题编号
+                '.nomobile',                // 非移动端元素
             ],
 
             // 要保留的特殊元素选择器
@@ -94,6 +122,7 @@ class PageContentParser {
             this._processImages($content);
             this._processLinks($content);
             this._processTables($content);
+            this._simplifyComplexTags($content);  // 新增：简化复合标签
 
             // 提取内容组件
             const components = this._extractContentComponents($content);
@@ -301,22 +330,56 @@ class PageContentParser {
         $('a[href]').each((i, el) => {
             const $link = $(el);
             let href = $link.attr('href');
+            const linkText = $link.text().trim();
             
             if (!href) return;
-
-            // 处理内部链接
-            if (linkOptions.convertInternalLinks && href.startsWith('/')) {
-                href = linkOptions.baseUrl + href;
-                $link.attr('href', href);
-            }
 
             // 移除编辑链接和其他不需要的链接
             if (href.includes('action=edit') || 
                 href.includes('redlink=1') ||
-                $link.hasClass('mw-selflink')) {
-                $link.replaceWith($link.text());
+                href.includes('Special:') ||
+                href.includes('File:') ||
+                href.includes('Category:') ||
+                $link.hasClass('mw-selflink') ||
+                $link.hasClass('external') ||
+                $link.hasClass('mw-cite-backlink') ||
+                $link.hasClass('mw-reflink-text')) {
+                $link.replaceWith(linkText);
+                return;
             }
+
+            // 移除大部分内部Wiki链接，只保留文本内容
+            // 这解决了用户提到的"复合标签，文字都会套一个链接"的问题
+            if (href.startsWith('/') || href.startsWith('#')) {
+                // 检查是否是重要的内部链接（如目录链接）
+                if (href.startsWith('#') && $link.closest('#toc, .toc').length > 0) {
+                    // 保留目录中的锚点链接
+                    if (linkOptions.convertInternalLinks) {
+                        href = linkOptions.baseUrl + href;
+                        $link.attr('href', href);
+                    }
+                } else {
+                    // 移除普通的内部链接，只保留文本
+                    $link.replaceWith(linkText);
+                }
+                return;
+            }
+
+            // 处理外部链接 - 保留真正有用的外部链接
+            if (linkOptions.preserveExternalLinks && 
+                (href.startsWith('http://') || href.startsWith('https://')) &&
+                !href.includes('minecraft.wiki') &&
+                !href.includes('minecraftwiki.net')) {
+                // 保留外部链接
+                return;
+            }
+
+            // 其他情况下移除链接，保留文本
+            $link.replaceWith(linkText);
         });
+
+        // 清理空的链接元素
+        $('a:empty').remove();
 
         $content.html($.html());
     }
@@ -339,6 +402,92 @@ class PageContentParser {
             // 清理表格样式
             $table.removeAttr('style border cellpadding cellspacing');
             $table.find('*').removeAttr('style');
+        });
+
+        $content.html($.html());
+    }
+
+    /**
+     * 简化复合标签结构，移除不必要的嵌套和样式
+     * @private
+     */
+    _simplifyComplexTags($content) {
+        const $ = cheerio.load($content.html());
+        
+        // 移除不必要的span标签，只保留有意义的内容
+        $('span').each((i, el) => {
+            const $span = $(el);
+            const classList = $span.attr('class') || '';
+            
+            // 移除只有样式作用的span标签
+            if (!classList || 
+                classList.includes('nowrap') ||
+                classList.includes('mw-') ||
+                classList.includes('sprite-') ||
+                classList.includes('pixel-')) {
+                $span.replaceWith($span.html());
+            }
+        });
+
+        // 简化div结构，移除只有样式作用的div
+        $('div').each((i, el) => {
+            const $div = $(el);
+            const classList = $div.attr('class') || '';
+            
+            // 保留重要的div（如infobox, 表格容器等）
+            if (!this._isPreservedElement($div) && 
+                (!classList || 
+                 classList.includes('mw-parser-output') === false)) {
+                
+                // 如果div只包含文本或简单内容，简化它
+                if ($div.children().length <= 1) {
+                    $div.replaceWith($div.html());
+                }
+            }
+        });
+        
+        // 移除空的样式属性
+        $('*').each((i, el) => {
+            const $el = $(el);
+            $el.removeAttr('style');
+            $el.removeAttr('data-*');
+            
+            // 移除不必要的class属性
+            const classList = $el.attr('class');
+            if (classList) {
+                const cleanClasses = classList.split(' ')
+                    .filter(cls => 
+                        cls.includes('infobox') ||
+                        cls.includes('wikitable') ||
+                        cls.includes('thumb') ||
+                        cls.includes('gallery') ||
+                        cls.includes('toc')
+                    );
+                
+                if (cleanClasses.length > 0) {
+                    $el.attr('class', cleanClasses.join(' '));
+                } else {
+                    $el.removeAttr('class');
+                }
+            }
+        });
+
+        // 清理连续的空白元素
+        $('p:empty, div:empty, span:empty').remove();
+        
+        // 合并连续的相同标签
+        $('p + p, br + br').each((i, el) => {
+            const $el = $(el);
+            const $prev = $el.prev();
+            
+            if ($el.prop('tagName') === $prev.prop('tagName')) {
+                if ($el.prop('tagName') === 'P') {
+                    $prev.append(' ' + $el.html());
+                    $el.remove();
+                } else if ($el.prop('tagName') === 'BR') {
+                    $el.remove();
+                }
+            }
         });
 
         $content.html($.html());
