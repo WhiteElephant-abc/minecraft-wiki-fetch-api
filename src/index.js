@@ -2,36 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const winston = require('winston');
-require('dotenv').config();
+
+// Import our custom modules
+const config = require('./config');
+const { logger, requestLoggingMiddleware } = require('./utils/logger');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Configure Winston logger
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'minecraft-wiki-api' },
-  transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-  ],
-});
-
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
-}
 
 // Security middleware
 app.use(helmet());
@@ -39,8 +15,8 @@ app.use(cors());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) || 60000, // 1 minute
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
   message: {
     success: false,
     error: {
@@ -56,14 +32,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
-  });
-  next();
-});
+app.use(requestLoggingMiddleware());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -120,9 +89,13 @@ app.use((err, req, res, next) => {
 
 // Start server only if this file is run directly (not required)
 if (require.main === module) {
-  app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}`);
-    console.log(`🚀 Minecraft Wiki API server started on http://localhost:${PORT}`);
+  app.listen(config.server.port, () => {
+    logger.info(`Server is running on port ${config.server.port}`, {
+      port: config.server.port,
+      nodeEnv: config.server.nodeEnv,
+      wikiBaseUrl: config.wiki.baseUrl
+    });
+    console.log(`🚀 Minecraft Wiki API server started on http://localhost:${config.server.port}`);
   });
 }
 
