@@ -26,7 +26,7 @@ async function testPortManager() {
     const testPort = nextPort || 3001;
     
     await new Promise((resolve, reject) => {
-      testServer.listen(testPort, () => {
+      testServer.listen(testPort, '127.0.0.1', () => {
         console.log(`   Test server started on port ${testPort}`);
         resolve();
       });
@@ -35,7 +35,7 @@ async function testPortManager() {
 
     // Now try to get an available port starting from the occupied port
     console.log(`   Trying to get available port starting from occupied port ${testPort}...`);
-    const alternativePort = await getAvailablePort(testPort, { maxAttempts: 10 });
+    const alternativePort = await getAvailablePort(testPort, { maxAttempts: 10, host: '127.0.0.1' });
     console.log(`   Alternative port found: ${alternativePort}\n`);
 
     // Test 4: Create another server on the alternative port
@@ -43,7 +43,7 @@ async function testPortManager() {
     const alternativeServer = createServer();
     
     await new Promise((resolve, reject) => {
-      alternativeServer.listen(alternativePort, () => {
+      alternativeServer.listen(alternativePort, '127.0.0.1', () => {
         console.log(`   Alternative server started on port ${alternativePort}`);
         resolve();
       });

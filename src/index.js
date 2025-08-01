@@ -6,7 +6,7 @@ const rateLimit = require('express-rate-limit');
 // Import our custom modules
 const config = require('./config');
 const { logger, requestLoggingMiddleware } = require('./utils/logger');
-const { getAvailablePort } = require('./utils/portManager');
+const { getAvailablePort, startServerSafely } = require('./utils/portManager');
 const { 
   asyncHandler, 
   notFoundHandler, 
@@ -184,86 +184,86 @@ if (require.main === module) {
  */
 async function startServer() {
   try {
-    let serverPort = config.server.port;
+    let server, serverPort;
 
     // Check if auto port selection is enabled
     if (config.server.autoPort) {
-      // Get an available port, starting with the configured port
-      serverPort = await getAvailablePort(config.server.port, {
+      // Use the safe server startup method
+      const result = await startServerSafely(app, config.server.port, config.server.host, {
         maxAttempts: config.server.maxPortAttempts,
         logAttempts: true
       });
+      
+      server = result.server;
+      serverPort = result.port;
     } else {
-      // If auto port is disabled, just validate the configured port
+      // If auto port is disabled, just validate the configured port and start normally
       const { validatePort } = require('./utils/portManager');
       validatePort(config.server.port);
       
       logger.info('Auto port selection is disabled, using configured port', {
         port: config.server.port
       });
+      
+      serverPort = config.server.port;
+      
+      // Start the server on the configured port
+      server = await new Promise((resolve, reject) => {
+        const serverInstance = app.listen(serverPort, config.server.host, (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(serverInstance);
+        });
+        
+        serverInstance.on('error', (error) => {
+          reject(error);
+        });
+      });
     }
 
-    // Start the server on the selected port and host
-    const server = app.listen(serverPort, config.server.host, () => {
-      const serverInfo = {
-        host: config.server.host,
-        port: serverPort,
-        nodeEnv: config.server.nodeEnv,
-        wikiBaseUrl: config.wiki.baseUrl,
-        originalPort: config.server.port,
-        portChanged: serverPort !== config.server.port,
-        autoPortEnabled: config.server.autoPort
-      };
+    // Server started successfully
+    const serverInfo = {
+      host: config.server.host,
+      port: serverPort,
+      nodeEnv: config.server.nodeEnv,
+      wikiBaseUrl: config.wiki.baseUrl,
+      originalPort: config.server.port,
+      portChanged: serverPort !== config.server.port,
+      autoPortEnabled: config.server.autoPort
+    };
 
-      logger.info(`Server started successfully`, serverInfo);
-      
-      // Console output
-      if (config.server.autoPort && serverPort !== config.server.port) {
-        console.log(`⚠️  Port ${config.server.port} was occupied, server started on port ${serverPort}`);
-      }
-      
-      const hostDisplay = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
-      console.log(`🚀 Minecraft Wiki API server started on http://${hostDisplay}:${serverPort}`);
-      console.log(`📋 API endpoints:`);
-      console.log(`   - GET /api/search?q=钻石`);
-      console.log(`   - GET /api/search?q=钻石&limit=20`);
-      console.log(`   - GET /api/page/钻石?format=markdown`);
-      console.log(`   - GET /api/page/钻石`);
-      console.log(`   - POST /api/pages`);
-      console.log(`   - GET /health`);
-      
-      if (config.server.autoPort && serverPort !== config.server.port) {
-        console.log(`\n💡 Tip: Update your PORT environment variable to ${serverPort} to avoid port conflicts`);
-        console.log(`   Or set AUTO_PORT=false to disable automatic port selection`);
-      }
-    });
+    logger.info(`Server started successfully`, serverInfo);
+    
+    // Console output
+    if (config.server.autoPort && serverPort !== config.server.port) {
+      console.log(`⚠️  Port ${config.server.port} was occupied, server started on port ${serverPort}`);
+    }
+    
+    const hostDisplay = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
+    console.log(`🚀 Minecraft Wiki API server started on http://${hostDisplay}:${serverPort}`);
+    console.log(`📋 API endpoints:`);
+    console.log(`   - GET /api/search?q=钻石`);
+    console.log(`   - GET /api/search?q=钻石&limit=20`);
+    console.log(`   - GET /api/page/钻石?format=markdown`);
+    console.log(`   - GET /api/page/钻石`);
+    console.log(`   - POST /api/pages`);
+    console.log(`   - GET /health`);
+    
+    if (config.server.autoPort && serverPort !== config.server.port) {
+      console.log(`\n💡 Tip: Update your PORT environment variable to ${serverPort} to avoid port conflicts`);
+      console.log(`   Or set AUTO_PORT=false to disable automatic port selection`);
+    }
 
-    // Handle server errors
+    // Handle server errors (though they should be less likely now)
     server.on('error', (error) => {
-      if (error.code === 'EADDRINUSE') {
-        if (config.server.autoPort) {
-          logger.error(`Port ${serverPort} is still in use after verification. This should not happen.`, {
-            port: serverPort,
-            error: error.message
-          });
-          console.error(`❌ Critical error: Port ${serverPort} is still in use. Please restart the application.`);
-        } else {
-          logger.error(`Port ${config.server.port} is already in use`, {
-            port: config.server.port,
-            error: error.message,
-            suggestion: 'Enable AUTO_PORT=true for automatic port selection'
-          });
-          console.error(`❌ Port ${config.server.port} is already in use.`);
-          console.error(`   Set AUTO_PORT=true in your environment to enable automatic port selection.`);
-        }
-      } else {
-        logger.error('Server error occurred', {
-          error: error.message,
-          code: error.code,
-          port: serverPort
-        });
-        console.error(`❌ Server error: ${error.message}`);
-      }
+      logger.error('Unexpected server error after startup', {
+        error: error.message,
+        code: error.code,
+        port: serverPort
+      });
+      console.error(`❌ Unexpected server error: ${error.message}`);
       process.exit(1);
     });
 
