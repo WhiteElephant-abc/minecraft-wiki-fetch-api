@@ -42,7 +42,8 @@ class SearchUrlBuilder {
             search: keyword.trim(),
             title: 'Special:搜索',
             profile: profile,
-            fulltext: fulltext ? '1' : '0'
+            fulltext: fulltext ? '1' : '0',
+            limit: limit.toString()
         });
 
         // Add namespace parameters in MC Wiki format (ns0=1, ns9994=1, etc.)

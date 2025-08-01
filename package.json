@@ -8,7 +8,10 @@
     "dev": "nodemon src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testPathIgnorePatterns=realNetwork.test.js",
+    "test:network": "jest tests/realNetwork.test.js",
+    "test:all": "jest --testPathPattern=."
   },
   "keywords": [
     "minecraft",
