@@ -4,7 +4,7 @@
  */
 
 const { createServer } = require('http');
-const { getAvailablePort, isPortAvailable, findAvailablePort } = require('./src/utils/portManager');
+const { getAvailablePort, isPortAvailable, findAvailablePort } = require('../src/utils/portManager');
 
 async function testPortManager() {
   console.log('🧪 Testing Port Manager Functionality\n');

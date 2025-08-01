@@ -9,7 +9,7 @@ const fs = require('fs');
 const config = require('../config');
 
 // Ensure log directory exists
-const logDir = config.logging.logDir;
+const logDir = config.logging.dir;
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
@@ -92,7 +92,7 @@ const logger = winston.createLogger({
 });
 
 // Add console transport in development and test environments
-if (config.logging.enableConsole) {
+if (config.logging.console) {
   logger.add(new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),

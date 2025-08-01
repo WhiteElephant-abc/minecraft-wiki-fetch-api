@@ -3,7 +3,7 @@
  * 用于验证WikiPageService是否能正常工作
  */
 
-const WikiPageService = require('./src/services/wikiPageService');
+const WikiPageService = require('../src/services/wikiPageService');
 
 async function testPageService() {
     console.log('📄 开始测试Wiki页面获取功能...\n');

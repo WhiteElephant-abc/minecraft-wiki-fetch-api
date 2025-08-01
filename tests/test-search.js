@@ -3,7 +3,7 @@
  * 用于验证WikiSearchService是否能正常工作
  */
 
-const WikiSearchService = require('./src/services/wikiSearchService');
+const WikiSearchService = require('../src/services/wikiSearchService');
 
 async function testSearch() {
     console.log('🔍 开始测试Wiki搜索功能...\n');

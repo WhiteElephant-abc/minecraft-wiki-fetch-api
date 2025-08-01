@@ -49,8 +49,7 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
-      process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['*'];
+    const allowedOrigins = config.security.allowedOrigins;
     
     if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -204,9 +203,10 @@ async function startServer() {
       });
     }
 
-    // Start the server on the selected port
-    const server = app.listen(serverPort, () => {
+    // Start the server on the selected port and host
+    const server = app.listen(serverPort, config.server.host, () => {
       const serverInfo = {
+        host: config.server.host,
         port: serverPort,
         nodeEnv: config.server.nodeEnv,
         wikiBaseUrl: config.wiki.baseUrl,
@@ -222,7 +222,8 @@ async function startServer() {
         console.log(`⚠️  Port ${config.server.port} was occupied, server started on port ${serverPort}`);
       }
       
-      console.log(`🚀 Minecraft Wiki API server started on http://localhost:${serverPort}`);
+      const hostDisplay = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
+      console.log(`🚀 Minecraft Wiki API server started on http://${hostDisplay}:${serverPort}`);
       console.log(`📋 API endpoints:`);
       console.log(`   - GET /api/search?q=钻石`);
       console.log(`   - GET /api/search?q=钻石&limit=20`);

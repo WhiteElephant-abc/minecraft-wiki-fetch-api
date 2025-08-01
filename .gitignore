@@ -3,7 +3,7 @@
 .claude
 
 # Documentation (keeping spec docs)
-docs/*
+tmp_docs/*
 
 # Dependencies
 node_modules/
