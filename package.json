@@ -11,7 +11,10 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest --testPathIgnorePatterns=realNetwork.test.js",
     "test:network": "jest tests/realNetwork.test.js",
-    "test:all": "jest --testPathPattern=."
+    "test:all": "jest --testPathPattern=.",
+    "test:search": "node test-search.js",
+    "test:page": "node test-page.js",
+    "test:demo": "node test-all.js"
   },
   "keywords": [
     "minecraft",
