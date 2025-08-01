@@ -17,7 +17,9 @@
     "test:demo": "node test-all.js",
     "test:api": "node test-api.js",
     "test:port": "node test-port-manager.js",
-    "test:errors": "node test-error-handling.js"
+    "test:errors": "node test-error-handling.js",
+    "demo:json": "node example/prettyJsonExample.js",
+    "demo:formatter": "node demo/jsonFormatterDemo.js"
   },
   "keywords": [
     "minecraft",

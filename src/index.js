@@ -16,6 +16,7 @@ const {
   requestIdHandler,
   corsErrorHandler 
 } = require('./middleware/errorHandler');
+const { jsonFormatterMiddleware } = require('./middleware/jsonFormatter');
 const { apiRoutes, healthRoutes } = require('./routes');
 
 const app = express();
@@ -131,6 +132,9 @@ app.use(express.urlencoded({
 // Request logging middleware
 app.use(requestLoggingMiddleware());
 
+// JSON格式化中间件
+app.use(jsonFormatterMiddleware());
+
 // Mount routes
 app.use('/health', healthRoutes);
 app.use('/api', apiRoutes);
@@ -152,8 +156,8 @@ app.get('/', asyncHandler(async (req, res) => {
     description: 'API service for scraping Minecraft Chinese Wiki content',
     status: healthInfo,
     endpoints: {
-      search: 'GET /api/search?q={keyword}&limit={number}',
-      page: 'GET /api/page/{pageName}?format={html|markdown|both}',
+      search: 'GET /api/search?q={keyword}&limit={number}&pretty={true|false}',
+      page: 'GET /api/page/{pageName}?format={html|markdown|both}&pretty={true|false}',
       batchPages: 'POST /api/pages',
       pageExists: 'GET /api/page/{pageName}/exists',
       health: 'GET /health',
@@ -245,8 +249,8 @@ async function startServer() {
     console.log(`🚀 Minecraft Wiki API server started on http://${hostDisplay}:${serverPort}`);
     console.log(`📋 API endpoints:`);
     console.log(`   - GET /api/search?q=钻石`);
-    console.log(`   - GET /api/search?q=钻石&limit=20`);
-    console.log(`   - GET /api/page/钻石?format=markdown`);
+    console.log(`   - GET /api/search?q=钻石&limit=20&pretty=true`);
+    console.log(`   - GET /api/page/钻石?format=markdown&pretty=true`);
     console.log(`   - GET /api/page/钻石`);
     console.log(`   - POST /api/pages`);
     console.log(`   - GET /health`);

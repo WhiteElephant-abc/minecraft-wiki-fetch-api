@@ -51,8 +51,14 @@ curl http://localhost:3000/health
 # 搜索内容
 GET /api/search?q=钻石&limit=10
 
+# 搜索内容（格式化JSON）
+GET /api/search?q=钻石&limit=10&pretty=true
+
 # 获取页面
 GET /api/page/钻石?format=markdown
+
+# 获取页面（格式化JSON）
+GET /api/page/钻石?format=markdown&pretty=true
 
 # 批量获取
 POST /api/pages
@@ -61,6 +67,20 @@ POST /api/pages
 # 健康检查
 GET /health
 ```
+
+### 🎨 JSON格式化功能
+
+支持通过 `pretty` 参数控制JSON响应格式：
+
+```bash
+# 压缩格式（默认）
+curl "http://localhost:3000/api/search?q=钻石"
+
+# 格式化输出（便于阅读）
+curl "http://localhost:3000/api/search?q=钻石&pretty=true"
+```
+
+**支持的参数值**: `true/false`, `1/0`, `yes/no` (大小写不敏感)
 
 **详细 API 文档**: [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 

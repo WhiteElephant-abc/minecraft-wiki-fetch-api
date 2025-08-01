@@ -82,11 +82,13 @@ curl "http://localhost:3000/api/page/钻石?format=markdown"
 - `limit` (可选): 结果数量限制，默认10，最大50
 - `namespaces` (可选): 命名空间，多个用逗号分隔
 - `format` (可选): 响应格式，默认 json
+- `pretty` (可选): JSON格式化，支持 true/false/1/0/yes/no，默认 false
 
 **示例请求:**
 ```
 GET /api/search?q=钻石&limit=5
 GET /api/search?q=redstone&namespaces=0,14&limit=10
+GET /api/search?q=钻石&pretty=true
 ```
 
 **响应示例:**
@@ -156,12 +158,14 @@ GET /api/search?q=redstone&namespaces=0,14&limit=10
 - `format` (可选): 输出格式 - `html`, `markdown`, `both`，默认 `both`
 - `useCache` (可选): 是否使用缓存，默认 `true`
 - `includeMetadata` (可选): 是否包含元数据，默认 `true`
+- `pretty` (可选): JSON格式化，支持 true/false/1/0/yes/no，默认 false
 
 **示例请求:**
 ```
 GET /api/page/钻石
 GET /api/page/%E9%92%BB%E7%9F%B3?format=markdown
 GET /api/page/Diamond?format=html&useCache=false
+GET /api/page/钻石?pretty=true
 ```
 
 **响应示例:**
@@ -493,6 +497,102 @@ GET /api/page/Diamond?format=html&useCache=false
 
 ---
 
+## 🎨 JSON格式化
+
+### 概述
+
+API支持通过 `pretty` 查询参数控制JSON响应的格式化。这对于开发调试和API测试非常有用。
+
+### 使用方法
+
+**查询参数:**
+- `pretty`: 控制JSON格式化
+  - 支持值: `true`, `false`, `1`, `0`, `yes`, `no`
+  - 大小写不敏感
+  - 默认值: `false` (压缩格式)
+
+### 示例对比
+
+**压缩格式 (默认):**
+```bash
+GET /api/search?q=钻石&limit=2
+```
+
+响应 (单行压缩):
+```json
+{"success":true,"data":{"query":"钻石","results":[{"title":"钻石","url":"https://zh.minecraft.wiki/w/钻石","snippet":"钻石是游戏中最珍贵的材料之一..."}]}}
+```
+
+**格式化输出:**
+```bash
+GET /api/search?q=钻石&limit=2&pretty=true
+```
+
+响应 (格式化):
+```json
+{
+  "success": true,
+  "data": {
+    "query": "钻石",
+    "results": [
+      {
+        "title": "钻石",
+        "url": "https://zh.minecraft.wiki/w/钻石",
+        "snippet": "钻石是游戏中最珍贵的材料之一..."
+      }
+    ]
+  }
+}
+```
+
+### 响应头信息
+
+格式化的响应会包含额外的HTTP头：
+
+```
+X-JSON-Formatted: true
+Content-Type: application/json; charset=utf-8
+```
+
+### 支持的参数值
+
+| 参数值 | 结果 | 说明 |
+|--------|------|------|
+| `true`, `TRUE`, `True` | 格式化 | 字符串true（大小写不敏感） |
+| `false`, `FALSE`, `False` | 压缩 | 字符串false（大小写不敏感） |
+| `1` | 格式化 | 数字1 |
+| `0` | 压缩 | 数字0 |
+| `yes`, `YES`, `Yes` | 格式化 | 字符串yes（大小写不敏感） |
+| `no`, `NO`, `No` | 压缩 | 字符串no（大小写不敏感） |
+| 未提供 | 压缩 | 默认行为 |
+
+### 性能考虑
+
+- **格式化输出**: 增加响应大小约20-30%，轻微增加处理时间
+- **压缩输出**: 最小响应大小，最快处理速度
+- **建议**: 开发调试时使用格式化，生产环境使用压缩格式
+
+### 错误处理
+
+无效的 `pretty` 参数值会返回400错误：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PRETTY_PARAMETER",
+    "message": "pretty参数值无效",
+    "details": {
+      "received": "invalid_value",
+      "validValues": ["true", "false", "1", "0", "yes", "no"]
+    },
+    "timestamp": "2024-01-01T12:00:00Z"
+  }
+}
+```
+
+---
+
 ## 💾 缓存机制
 
 ### 缓存控制
@@ -528,9 +628,17 @@ GET /api/pages/stats            # 页面缓存统计
 const response = await fetch('http://localhost:3000/api/search?q=钻石&limit=5');
 const searchData = await response.json();
 
+// 搜索功能（格式化JSON）
+const prettyResponse = await fetch('http://localhost:3000/api/search?q=钻石&limit=5&pretty=true');
+const prettySearchData = await prettyResponse.json();
+
 // 获取页面内容
 const pageResponse = await fetch('http://localhost:3000/api/page/钻石?format=markdown');
 const pageData = await pageResponse.json();
+
+// 获取页面内容（格式化JSON）
+const prettyPageResponse = await fetch('http://localhost:3000/api/page/钻石?format=markdown&pretty=true');
+const prettyPageData = await prettyPageResponse.json();
 
 // 批量获取页面
 const batchResponse = await fetch('http://localhost:3000/api/pages', {
@@ -552,8 +660,14 @@ const batchData = await batchResponse.json();
 # 搜索
 curl "http://localhost:3000/api/search?q=钻石&limit=5"
 
+# 搜索（格式化JSON）
+curl "http://localhost:3000/api/search?q=钻石&limit=5&pretty=true"
+
 # 获取页面内容
 curl "http://localhost:3000/api/page/钻石?format=markdown"
+
+# 获取页面内容（格式化JSON）
+curl "http://localhost:3000/api/page/钻石?format=markdown&pretty=true"
 
 # 检查健康状态
 curl "http://localhost:3000/health"
@@ -574,10 +688,20 @@ response = requests.get('http://localhost:3000/api/search',
                        params={'q': '钻石', 'limit': 5})
 search_data = response.json()
 
+# 搜索（格式化JSON）
+pretty_response = requests.get('http://localhost:3000/api/search', 
+                              params={'q': '钻石', 'limit': 5, 'pretty': 'true'})
+pretty_search_data = pretty_response.json()
+
 # 获取页面内容
 page_response = requests.get('http://localhost:3000/api/page/钻石',
                            params={'format': 'markdown'})
 page_data = page_response.json()
+
+# 获取页面内容（格式化JSON）
+pretty_page_response = requests.get('http://localhost:3000/api/page/钻石',
+                                   params={'format': 'markdown', 'pretty': 'true'})
+pretty_page_data = pretty_page_response.json()
 
 # 批量获取
 batch_response = requests.post('http://localhost:3000/api/pages',

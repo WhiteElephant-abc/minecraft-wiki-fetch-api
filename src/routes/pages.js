@@ -22,11 +22,13 @@ const pageController = new PageController();
  * - format: 输出格式 (可选: html, markdown, both, 默认both)
  * - useCache: 是否使用缓存 (可选: true/false, 默认true)
  * - includeMetadata: 是否包含元数据 (可选: true/false, 默认true)
+ * - pretty: JSON格式化 (可选: true/false/1/0/yes/no, 默认false)
  * 
  * 示例:
  * GET /api/page/钻石
  * GET /api/page/%E9%92%BB%E7%9F%B3?format=markdown
  * GET /api/page/Diamond?format=html&useCache=false
+ * GET /api/page/钻石?pretty=true (格式化JSON输出)
  */
 router.get('/:pageName', 
     validatePageParams,

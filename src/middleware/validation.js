@@ -222,7 +222,7 @@ class ParamValidator {
 function validateSearchParams(req, res, next) {
     try {
         const validator = new ParamValidator();
-        const { q, limit, namespaces, format } = req.query;
+        const { q, limit, namespaces, format, pretty } = req.query;
 
         // 验证搜索关键词
         validator
@@ -244,6 +244,11 @@ function validateSearchParams(req, res, next) {
             validator.enum(format, '响应格式 (format)', ['json'], false);
         }
 
+        // 验证JSON格式化参数
+        if (pretty !== undefined) {
+            validator.enum(pretty, 'JSON格式化 (pretty)', ['true', 'false', '1', '0', 'yes', 'no'], false);
+        }
+
         validator.validate();
         next();
     } catch (error) {
@@ -258,7 +263,7 @@ function validatePageParams(req, res, next) {
     try {
         const validator = new ParamValidator();
         const { pageName } = req.params;
-        const { format, useCache, includeMetadata } = req.query;
+        const { format, useCache, includeMetadata, pretty } = req.query;
 
         // 验证页面名称
         validator
@@ -278,6 +283,11 @@ function validatePageParams(req, res, next) {
         // 验证元数据选项
         if (includeMetadata !== undefined) {
             validator.boolean(includeMetadata, '元数据选项 (includeMetadata)');
+        }
+
+        // 验证JSON格式化参数
+        if (pretty !== undefined) {
+            validator.enum(pretty, 'JSON格式化 (pretty)', ['true', 'false', '1', '0', 'yes', 'no'], false);
         }
 
         validator.validate();

@@ -20,10 +20,12 @@ const searchController = new SearchController();
  * - limit: 结果数量限制 (可选, 默认10, 最大50)
  * - namespaces: 命名空间 (可选, 默认主命名空间)
  * - format: 响应格式 (可选, 默认json)
+ * - pretty: JSON格式化 (可选, true/false/1/0/yes/no, 默认false)
  * 
  * 示例:
  * GET /api/search?q=钻石&limit=5
  * GET /api/search?q=redstone&namespaces=0,14&limit=10
+ * GET /api/search?q=钻石&pretty=true (格式化JSON输出)
  */
 router.get('/', 
     validateSearchParams,
