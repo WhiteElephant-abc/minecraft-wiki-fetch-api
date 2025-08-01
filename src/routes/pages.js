@@ -5,6 +5,8 @@
 
 const express = require('express');
 const PageController = require('../controllers/pageController');
+const { asyncHandler } = require('../middleware/errorHandler');
+const { validatePageParams, validateBatchPageParams, validateContentType } = require('../middleware/validation');
 
 const router = express.Router();
 const pageController = new PageController();
@@ -26,9 +28,12 @@ const pageController = new PageController();
  * GET /api/page/%E9%92%BB%E7%9F%B3?format=markdown
  * GET /api/page/Diamond?format=html&useCache=false
  */
-router.get('/:pageName', async (req, res) => {
-    await pageController.getPage(req, res);
-});
+router.get('/:pageName', 
+    validatePageParams,
+    asyncHandler(async (req, res) => {
+        await pageController.getPage(req, res);
+    })
+);
 
 /**
  * POST /api/pages
@@ -42,9 +47,13 @@ router.get('/:pageName', async (req, res) => {
  *   "useCache": true
  * }
  */
-router.post('/', async (req, res) => {
-    await pageController.getPages(req, res);
-});
+router.post('/', 
+    validateContentType(['application/json']),
+    validateBatchPageParams,
+    asyncHandler(async (req, res) => {
+        await pageController.getPages(req, res);
+    })
+);
 
 /**
  * GET /api/page/:pageName/exists
@@ -57,9 +66,11 @@ router.post('/', async (req, res) => {
  * GET /api/page/钻石/exists
  * GET /api/page/%E9%92%BB%E7%9F%B3/exists
  */
-router.get('/:pageName/exists', async (req, res) => {
-    await pageController.checkPageExists(req, res);
-});
+router.get('/:pageName/exists', 
+    asyncHandler(async (req, res) => {
+        await pageController.checkPageExists(req, res);
+    })
+);
 
 /**
  * DELETE /api/page/:pageName/cache
@@ -72,16 +83,20 @@ router.get('/:pageName/exists', async (req, res) => {
  * DELETE /api/page/钻石/cache
  * DELETE /api/page/all/cache
  */
-router.delete('/:pageName/cache', async (req, res) => {
-    await pageController.clearPageCache(req, res);
-});
+router.delete('/:pageName/cache', 
+    asyncHandler(async (req, res) => {
+        await pageController.clearPageCache(req, res);
+    })
+);
 
 /**
  * GET /api/pages/stats
  * 获取页面服务统计信息
  */
-router.get('/stats', async (req, res) => {
-    await pageController.getStats(req, res);
-});
+router.get('/stats', 
+    asyncHandler(async (req, res) => {
+        await pageController.getStats(req, res);
+    })
+);
 
 module.exports = router;

@@ -7,15 +7,66 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const { logger, requestLoggingMiddleware } = require('./utils/logger');
 const { getAvailablePort } = require('./utils/portManager');
+const { 
+  asyncHandler, 
+  notFoundHandler, 
+  errorHandler, 
+  validateRequest, 
+  sanitizeParams, 
+  requestIdHandler,
+  corsErrorHandler 
+} = require('./middleware/errorHandler');
 const { apiRoutes, healthRoutes } = require('./routes');
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-app.use(cors());
+// Trust proxy (for proper IP detection behind reverse proxies)
+app.set('trust proxy', 1);
 
-// Rate limiting
+// Request ID middleware (must be first)
+app.use(requestIdHandler);
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// CORS with error handling
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.ALLOWED_ORIGINS ? 
+      process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['*'];
+    
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    const error = new Error(`Origin ${origin} not allowed by CORS policy`);
+    error.statusCode = 403;
+    callback(error);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For']
+}));
+app.use(corsErrorHandler);
+
+// Rate limiting with enhanced error handling
 const limiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
@@ -23,15 +74,60 @@ const limiter = rateLimit({
     success: false,
     error: {
       code: 'RATE_LIMIT_EXCEEDED',
-      message: '请求过于频繁，请稍后再试'
+      message: '请求过于频繁，请稍后再试',
+      timestamp: new Date().toISOString()
     }
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    logger.warn('Rate limit exceeded', {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.originalUrl,
+      method: req.method
+    });
+    
+    res.status(429).json({
+      success: false,
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: '请求过于频繁，请稍后再试',
+        details: {
+          windowMs: config.rateLimit.windowMs,
+          maxRequests: config.rateLimit.max
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
+  },
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path.startsWith('/health');
   }
 });
 app.use(limiter);
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Request validation and sanitization
+app.use(validateRequest({
+  maxBodySize: '10mb',
+  allowedContentTypes: ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'],
+  requireContentType: false
+}));
+app.use(sanitizeParams);
+
+// Body parsing middleware with error handling
+app.use(express.json({ 
+  limit: '10mb',
+  type: 'application/json'
+}));
+
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 1000,
+  type: 'application/x-www-form-urlencoded'
+}));
 
 // Request logging middleware
 app.use(requestLoggingMiddleware());
@@ -40,12 +136,22 @@ app.use(requestLoggingMiddleware());
 app.use('/health', healthRoutes);
 app.use('/api', apiRoutes);
 
-// Root endpoint
-app.get('/', (req, res) => {
+// Root endpoint with enhanced information
+app.get('/', asyncHandler(async (req, res) => {
+  const healthInfo = {
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    nodeVersion: process.version,
+    environment: config.server.nodeEnv
+  };
+
   res.json({
     name: 'Minecraft Wiki API',
     version: '1.0.0',
     description: 'API service for scraping Minecraft Chinese Wiki content',
+    status: healthInfo,
     endpoints: {
       search: 'GET /api/search?q={keyword}&limit={number}',
       page: 'GET /api/page/{pageName}?format={html|markdown|both}',
@@ -57,46 +163,17 @@ app.get('/', (req, res) => {
       live: 'GET /health/live'
     },
     documentation: 'https://github.com/your-repo/minecraft-wiki-api',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: '请求的端点不存在',
-      availableEndpoints: [
-        'GET /api/search',
-        'GET /api/page/:pageName',
-        'POST /api/pages',
-        'GET /health'
-      ]
+    contact: {
+      support: 'https://github.com/your-repo/minecraft-wiki-api/issues'
     }
   });
-});
+}));
 
-// Global error handler
-app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', {
-    error: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method,
-    ip: req.ip
-  });
-  
-  res.status(err.status || 500).json({
-    success: false,
-    error: {
-      code: err.code || 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production' ? '服务器内部错误' : err.message,
-      timestamp: new Date().toISOString()
-    }
-  });
-});
+// 404 handler - using the new middleware
+app.use('*', notFoundHandler);
+
+// Global error handler - using the new middleware
+app.use(errorHandler);
 
 // Start server only if this file is run directly (not required)
 if (require.main === module) {
@@ -148,6 +225,8 @@ async function startServer() {
       console.log(`🚀 Minecraft Wiki API server started on http://localhost:${serverPort}`);
       console.log(`📋 API endpoints:`);
       console.log(`   - GET /api/search?q=钻石`);
+      console.log(`   - GET /api/search?q=钻石&limit=20`);
+      console.log(`   - GET /api/page/钻石?format=markdown`);
       console.log(`   - GET /api/page/钻石`);
       console.log(`   - POST /api/pages`);
       console.log(`   - GET /health`);
