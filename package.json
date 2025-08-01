@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "vercel-dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -19,7 +22,10 @@
     "test:port": "node test-port-manager.js",
     "test:errors": "node test-error-handling.js",
     "demo:json": "node example/prettyJsonExample.js",
-    "demo:formatter": "node demo/jsonFormatterDemo.js"
+    "demo:formatter": "node demo/jsonFormatterDemo.js",
+    "test:serverless": "node scripts/test-serverless.js",
+    "deploy:script": "node scripts/deploy-vercel.js",
+    "dev:serverless": "node scripts/dev-serverless.js"
   },
   "keywords": [
     "minecraft",

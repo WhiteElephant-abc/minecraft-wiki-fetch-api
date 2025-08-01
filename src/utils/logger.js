@@ -8,9 +8,11 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../config');
 
-// Ensure log directory exists
+// Ensure log directory exists (skip in serverless environments)
 const logDir = config.logging.dir;
-if (!fs.existsSync(logDir)) {
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.FUNCTIONS_WORKER_RUNTIME;
+
+if (!isServerless && !fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
 
@@ -49,14 +51,13 @@ const jsonFormat = winston.format.combine(
 /**
  * Create logger instance with configured transports
  */
-const logger = winston.createLogger({
-  level: config.logging.level,
-  format: config.isProduction() ? jsonFormat : logFormat,
-  defaultMeta: { 
-    service: 'minecraft-wiki-api',
-    version: process.env.npm_package_version || '1.0.0'
-  },
-  transports: [
+const transports = [];
+const exceptionHandlers = [];
+const rejectionHandlers = [];
+
+// Add file transports only in non-serverless environments
+if (!isServerless && config.logging.file) {
+  transports.push(
     // Error log file - only errors
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
@@ -72,23 +73,35 @@ const logger = winston.createLogger({
       maxsize: 5242880, // 5MB
       maxFiles: 5,
       format: jsonFormat
-    }),
-  ],
-  
-  // Handle uncaught exceptions and rejections
-  exceptionHandlers: [
+    })
+  );
+
+  exceptionHandlers.push(
     new winston.transports.File({
       filename: path.join(logDir, 'exceptions.log'),
       format: jsonFormat
     })
-  ],
-  
-  rejectionHandlers: [
+  );
+
+  rejectionHandlers.push(
     new winston.transports.File({
       filename: path.join(logDir, 'rejections.log'),
       format: jsonFormat
     })
-  ]
+  );
+}
+
+const logger = winston.createLogger({
+  level: config.logging.level,
+  format: config.isProduction() ? jsonFormat : logFormat,
+  defaultMeta: { 
+    service: 'minecraft-wiki-api',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: isServerless ? 'serverless' : 'traditional'
+  },
+  transports,
+  exceptionHandlers,
+  rejectionHandlers
 });
 
 // Add console transport in development and test environments
