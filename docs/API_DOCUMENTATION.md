@@ -100,7 +100,7 @@ GET /api/search?q=redstone&namespaces=0,14&limit=10
         "title": "钻石",
         "url": "https://zh.minecraft.wiki/w/钻石",
         "snippet": "钻石是游戏中最珍贵的材料之一...",
-        "namespace": "主命名空间",
+        "namespace": "主要",
         "timestamp": "2024-01-01T12:00:00Z"
       }
     ],
