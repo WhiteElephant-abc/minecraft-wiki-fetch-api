@@ -238,75 +238,33 @@ ENABLE_PROFILING=true
 
 ## 环境配置模板
 
-### 开发环境 (.env.development)
+### 开发环境
 ```env
-# 开发环境配置
 NODE_ENV=development
 PORT=3000
-HOST=127.0.0.1
 DEBUG=true
-
-# 限流设置（开发友好）
-RATE_LIMIT_MAX=30
-RATE_LIMIT_WINDOW=60000
-
-# 日志设置
 LOG_LEVEL=debug
-LOG_CONSOLE=true
-
-# API文档
-ENABLE_API_DOCS=true
+RATE_LIMIT_MAX=30
 ```
 
-### 生产环境 (.env.production)
+### 生产环境
 ```env
-# 生产环境配置
 NODE_ENV=production
 PORT=80
-HOST=0.0.0.0
 DEBUG=false
-
-# 安全设置
+LOG_LEVEL=warn
+RATE_LIMIT_MAX=1000
 ALLOWED_ORIGINS=https://yourdomain.com
 FORCE_HTTPS=true
-API_KEY=your-production-api-key
-
-# 限流设置（生产级别）
-RATE_LIMIT_MAX=1000
-RATE_LIMIT_WINDOW=60000
-RATE_LIMIT_STORE=redis
-
-# 日志设置
-LOG_LEVEL=warn
-LOG_CONSOLE=false
-LOG_FILE=true
-
-# 性能优化
-ENABLE_COMPRESSION=true
-NODE_MEMORY_LIMIT=2048
-
-# 缓存设置
 REDIS_URL=redis://your-redis-host:6379
-CACHE_TTL=3600
 ```
 
-### 测试环境 (.env.test)
+### 测试环境
 ```env
-# 测试环境配置
 NODE_ENV=test
 PORT=0
-DEBUG=false
-
-# 禁用限流（测试友好）
-RATE_LIMIT_MAX=999999
-
-# 内存缓存（避免外部依赖）
-RATE_LIMIT_STORE=memory
-
-# 最小日志
 LOG_LEVEL=error
-LOG_CONSOLE=false
-LOG_FILE=false
+RATE_LIMIT_MAX=999999
 ```
 
 ## 配置验证
@@ -322,26 +280,20 @@ LOG_FILE=false
 
 ## 最佳实践
 
-1. **生产环境**：
-   - 使用强密码和密钥
-   - 启用HTTPS和安全头部
-   - 设置合适的限流参数
-   - 使用Redis存储限流数据
+### 安全
+- 不要将敏感信息提交到版本控制
+- 生产环境使用强密码和密钥
+- 定期轮换API密钥
 
-2. **开发环境**：
-   - 启用调试模式和详细日志
-   - 使用较低的限流阈值
-   - 启用API文档
+### 性能
+- 根据服务器规格设置内存限制
+- 启用响应压缩
+- 合理设置缓存时间
 
-3. **配置管理**：
-   - 不要将敏感信息提交到版本控制
-   - 使用环境变量管理工具
-   - 定期轮换API密钥和JWT密钥
-
-4. **性能优化**：
-   - 根据服务器规格设置内存限制
-   - 启用响应压缩
-   - 合理设置缓存时间
+### 环境管理
+- 使用不同的配置文件管理多环境
+- 使用环境变量管理工具
+- 定期检查配置的有效性
 
 ## 故障排除
 

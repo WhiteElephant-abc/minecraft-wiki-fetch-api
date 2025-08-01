@@ -1,76 +1,143 @@
 # Minecraft Wiki API
 
-一个用于抓取和转换 Minecraft 中文 Wiki 内容的 API 服务。
+一个功能完善的 RESTful API 服务，用于抓取、解析和转换 Minecraft Wiki 的内容。
 
-## 项目结构
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![API Version](https://img.shields.io/badge/API-v1.0.0-orange.svg)](docs/API_DOCUMENTATION.md)
 
-```
-minecraft-wiki-api/
-├── src/                    # 源代码目录
-│   └── index.js           # 主应用入口文件
-├── tests/                  # 测试文件目录
-│   ├── setup.js           # Jest 测试配置
-│   └── app.test.js        # 应用基础测试
-├── config/                 # 配置文件目录
-│   └── default.js         # 默认配置文件
-├── logs/                   # 日志文件目录
-├── .env.example           # 环境变量示例文件
-├── jest.config.js         # Jest 测试配置
-└── package.json           # 项目依赖和脚本配置
-```
+## ✨ 核心功能
 
-## 核心依赖
+- 🔍 **智能搜索**: 关键词搜索，相关度排序，分页浏览
+- 📄 **页面解析**: HTML/Markdown 格式输出，完整内容提取
+- 📦 **批量处理**: 支持批量获取多个页面内容
+- 💾 **智能缓存**: 多层缓存机制，提升响应速度
+- 🚦 **访问控制**: IP 限流，安全防护，健康监控
 
-- **express**: Web 框架
-- **axios**: HTTP 客户端，用于发送请求
-- **cheerio**: 服务端 jQuery，用于 HTML 解析
-- **turndown**: HTML 转 Markdown 转换器
-- **winston**: 日志记录库
-- **cors**: 跨域资源共享中间件
-- **helmet**: 安全中间件
-- **express-rate-limit**: 请求频率限制中间件
-- **dotenv**: 环境变量管理
+## 🚀 快速开始
 
-## 开发依赖
+### 环境要求
+- Node.js 18.0.0+
+- npm 或 yarn
 
-- **nodemon**: 开发时自动重启服务器
-- **jest**: 测试框架
-- **supertest**: HTTP 断言库
-
-## 快速开始
-
-1. 安装依赖：
+### 安装启动
 ```bash
+# 1. 安装依赖
 npm install
-```
 
-2. 复制环境变量文件：
-```bash
+# 2. 配置环境变量
 cp .env.example .env
+
+# 3. 启动服务
+npm run dev  # 开发模式
+npm start    # 生产模式
+
+# 4. 验证服务
+curl http://localhost:3000/health
 ```
 
-3. 启动开发服务器：
+## 🔧 技术栈
+
+- **后端**: Express.js + Node.js 18+
+- **解析**: Cheerio (HTML) + Turndown (Markdown)
+- **安全**: Helmet + CORS + Rate Limiting
+- **日志**: Winston 结构化日志
+- **测试**: Jest + Supertest
+
+## 📚 API 使用
+
+### 基础示例
 ```bash
-npm run dev
+# 搜索内容
+GET /api/search?q=钻石&limit=10
+
+# 获取页面
+GET /api/page/钻石?format=markdown
+
+# 批量获取
+POST /api/pages
+{"pages": ["钻石", "金锭"], "format": "markdown"}
+
+# 健康检查
+GET /health
 ```
 
-4. 运行测试：
-```bash
-npm test
-```
+**详细 API 文档**: [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 
-## API 端点
+## ⚙️ 配置
 
-- `GET /health` - 健康检查
-- `GET /api` - API 信息和可用端点列表
-
-## 环境变量
-
-参考 `.env.example` 文件配置以下环境变量：
-
+主要环境变量：
 - `PORT`: 服务器端口 (默认: 3000)
-- `NODE_ENV`: 运行环境 (development/production)
 - `WIKI_BASE_URL`: Wiki 基础 URL
-- `LOG_LEVEL`: 日志级别 (info/debug/error)
-- `RATE_LIMIT_WINDOW`: 限流时间窗口
-- `RATE_LIMIT_MAX`: 限流最大请求数
+- `RATE_LIMIT_MAX`: 每分钟最大请求数 (默认: 100)
+- `CACHE_TTL`: 缓存过期时间 (默认: 1800s)
+
+**完整配置指南**: [environment-variables-guide.md](docs/environment-variables-guide.md)
+
+## 🧪 测试
+
+```bash
+npm test              # 运行所有测试
+npm run test:unit     # 单元测试
+npm run test:coverage # 覆盖率报告
+```
+
+## 📖 文档
+
+- [📋 API 接口文档](docs/API_DOCUMENTATION.md) - 完整的 API 使用指南
+- [⚙️ 环境变量配置指南](docs/environment-variables-guide.md) - 详细的配置说明
+- [🏗️ 项目架构文档](docs/PROJECT_STRUCTURE.md) - 项目结构和技术架构
+
+## 📄 许可证
+
+- **项目代码**: [MIT License](./LICENSE)
+- **Wiki 内容**: [CC BY-NC-SA 3.0]((https://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh)) (来自中文 Minecraft Wiki)
+
+> ⚠️ **重要提醒**: 本项目获取的 Wiki 内容遵循 CC BY-NC-SA 3.0 许可协议。
+
+## 数据来源版权声明
+
+### Minecraft Wiki 内容
+
+本项目通过 API 获取的 Minecraft Wiki 内容遵循以下版权声明：
+
+**来源**: [中文 Minecraft Wiki](https://zh.minecraft.wiki)
+
+**许可协议**: [知识共享 署名-非商业性使用-相同方式共享 3.0 未本地化版本 (CC BY-NC-SA 3.0)](https://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh)
+
+#### 使用条件
+
+根据 [CC BY-NC-SA 3.0]((https://creativecommons.org/licenses/by-nc-sa/3.0/deed.zh)) 许可协议，使用本项目获取的 Wiki 内容时，您必须遵循以下规则：
+
+1. **署名** - 注明内容来自中文 Minecraft Wiki
+2. **非商业性使用** - 不得将内容用于商业目的
+3. **相同方式共享** - 如果修改或演绎内容，必须采用相同许可协议发布
+
+#### 内容归属
+
+- **Mojang 内容**: 版权归 Mojang Studios 所有，遵循《Minecraft 使用准则》
+- **特别注明内容**: 版权归原作者所有
+- **其他内容**: 遵循 CC BY-NC-SA 3.0 许可协议
+
+### 重要提醒
+
+1. **本项目仅提供技术工具**，用于访问和解析公开的 Wiki 内容
+2. **用户有责任**遵守相关版权法律和许可协议
+3. **商业使用**前请确保获得适当的授权
+4. **转载内容**时请注明来自中文 Minecraft Wiki
+
+## 免责声明
+
+1. 本项目不拥有任何 Minecraft Wiki 内容的版权
+2. 本项目不对通过 API 获取的内容的准确性、完整性或时效性承担责任
+3. 用户使用本项目获取的内容时，应自行承担相关法律责任
+4. 如有版权争议，请联系项目维护者进行处理
+
+## 🆘 支持
+
+- 问题报告: [GitHub Issues](https://github.com/rice-awa/minecraft-wiki-fetch-api/issues)
+- 联系作者: [issue@rice-awa.top](issue@rice-awa.top) 
+
+---
+
+**Made with ❤️ for the Minecraft community**

@@ -161,9 +161,9 @@ app.get('/', asyncHandler(async (req, res) => {
       ready: 'GET /health/ready',
       live: 'GET /health/live'
     },
-    documentation: 'https://github.com/your-repo/minecraft-wiki-api',
+    documentation: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/tree/main/docs',
     contact: {
-      support: 'https://github.com/your-repo/minecraft-wiki-api/issues'
+      support: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/issues'
     }
   });
 }));
