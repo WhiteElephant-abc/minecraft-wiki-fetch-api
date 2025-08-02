@@ -1,6 +1,7 @@
 # Minecraft Wiki API
 
 一个功能完善的 RESTful API 服务，用于抓取、解析和转换 Minecraft Wiki 的内容。
+API支持Vercel一键部署，详情前往此项目查看：[Minecraft Wiki API - Serverless版本](https://github.com/rice-awa/minecraft-wiki-fetch-vercel)
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
