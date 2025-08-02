@@ -16,6 +16,14 @@
 
 ## 🚀 快速开始
 
+### 在线使用
+本项目已经使用 Vercel 部署了一个 [Demo](https://mcwiki.rice-awa.top) 供您免费体验，您可以直接使用。
+
+### Vercel 一键部署
+- 请前往 [此项目](https://github.com/rice-awa/minecraft-wiki-fetch-vercel) 了解详情。
+
+## 本地部署
+
 ### 环境要求
 - Node.js 18.0.0+
 - npm 或 yarn
