@@ -53,6 +53,42 @@ curl http://localhost:3000/health
 - **日志**: Winston 结构化日志
 - **测试**: Jest + Supertest
 
+## 🛠️ 实现原理
+
+### 数据获取方式
+
+本项目**没有使用官方的MediaWiki API**，而是采用**HTML爬取和解析**的方式获取数据：
+
+#### 技术实现流程：
+
+1. **URL构建**: 通过 `SearchUrlBuilder` 构建Minecraft Wiki的特殊搜索页面URL
+   ```
+   https://zh.minecraft.wiki/?search=关键词&title=Special:搜索&profile=advanced&fulltext=1&limit=20
+   ```
+
+2. **HTML请求**: 使用Axios HTTP客户端获取搜索结果页面的完整HTML内容
+
+3. **DOM解析**: 通过Cheerio（服务端jQuery）解析HTML结构，提取：
+   - 搜索结果标题和链接
+   - 内容摘要和描述
+   - 页面命名空间信息
+   - 分页和统计数据
+
+4. **内容转换**: 将提取的HTML内容转换为结构化JSON数据或Markdown格式
+
+#### 技术特点：
+
+- ✅ **完整信息获取**: 能够获取搜索页面上显示的所有视觉信息
+- ✅ **实时数据**: 直接获取最新的页面内容
+- ⚠️ **依赖HTML结构**: 如果Wiki页面结构变化可能需要调整解析逻辑
+- ⚠️ **性能考虑**: 相比API调用需要解析更多数据
+
+#### 核心组件：
+
+- `SearchUrlBuilder`: 负责构建符合Wiki搜索格式的URL
+- `SearchResultsParser`: 使用CSS选择器解析HTML结构
+- `HttpClient`: 处理HTTP请求、重试机制和错误处理
+
 ## 📚 API 使用
 
 ### 基础示例
