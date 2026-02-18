@@ -1,4 +1,4 @@
-# Minecraft Wiki API
+﻿# Minecraft Wiki API
 
 一个用于抓取、解析并转换中文 Minecraft Wiki 内容的 REST API，已适配 Vercel Serverless 部署。
 
@@ -139,10 +139,9 @@ npm run test:serverless
 请在 Vercel 环境变量中正确设置 `ALLOWED_ORIGINS`，多个域名用逗号分隔。
 
 ## 相关文档
-
-- 部署详解：`./deploy-vercel.md`
-- API 说明：`./docs/API_DOCUMENTATION.md`
-- 环境变量：`./docs/environment-variables-guide.md`
+- [部署详解](./deploy-vercel.md)
+- [API 说明](./docs/API_DOCUMENTATION.md)
+- [环境变量](./docs/environment-variables-guide.md)
 
 ## 许可证
 
