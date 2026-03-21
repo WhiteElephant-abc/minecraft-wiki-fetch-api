@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 // Import our custom modules
@@ -18,6 +17,8 @@ const {
   corsErrorHandler 
 } = require('./middleware/errorHandler');
 const { jsonFormatterMiddleware } = require('./middleware/jsonFormatter');
+const { authMiddleware } = require('./middleware/auth');
+const { rateLimitMiddleware } = require('./middleware/rateLimiter');
 const { apiRoutes, healthRoutes } = require('./routes');
 
 const app = express();
@@ -63,51 +64,15 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For', 'X-API-Key']
 }));
 app.use(corsErrorHandler);
 
-// Rate limiting with enhanced error handling
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: {
-    success: false,
-    error: {
-      code: 'RATE_LIMIT_EXCEEDED',
-      message: '请求过于频繁，请稍后再试',
-      timestamp: new Date().toISOString()
-    }
-  },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  handler: (req, res) => {
-    logger.warn('Rate limit exceeded', {
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      url: req.originalUrl,
-      method: req.method
-    });
-    
-    res.status(429).json({
-      success: false,
-      error: {
-        code: 'RATE_LIMIT_EXCEEDED',
-        message: '请求过于频繁，请稍后再试',
-        details: {
-          windowMs: config.rateLimit.windowMs,
-          maxRequests: config.rateLimit.max
-        },
-        timestamp: new Date().toISOString()
-      }
-    });
-  },
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path.startsWith('/health');
-  }
-});
-app.use(limiter);
+// Authentication middleware (must be before rate limiter)
+app.use(authMiddleware);
+
+// Rate limiting with Upstash Redis support
+app.use(rateLimitMiddleware);
 
 // Request validation and sanitization
 app.use(validateRequest({

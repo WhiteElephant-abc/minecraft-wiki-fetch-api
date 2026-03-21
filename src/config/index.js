@@ -59,9 +59,18 @@ const config = {
   // 访问限流配置
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) || 60000, // 1分钟
-    max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+    max: parseInt(process.env.RATE_LIMIT_MAX) || 100, // 默认最大请求数（向后兼容）
+    anonymous: parseInt(process.env.RATE_LIMIT_ANONYMOUS) || parseInt(process.env.RATE_LIMIT_MAX) || 50, // 未认证用户配额
+    authenticated: parseInt(process.env.RATE_LIMIT_AUTHENTICATED) || 200, // 认证用户配额
     byIp: parseBoolean(process.env.RATE_LIMIT_BY_IP, true),
-    store: process.env.RATE_LIMIT_STORE || 'memory', // memory 或 redis
+    store: process.env.RATE_LIMIT_STORE || 'memory', // memory, redis, upstash
+    skipHealthCheck: parseBoolean(process.env.RATE_LIMIT_SKIP_HEALTH, true), // 健康检查跳过限流
+  },
+
+  // Upstash Redis 配置（用于分布式限流）
+  upstash: {
+    redisRestUrl: process.env.UPSTASH_REDIS_REST_URL || null,
+    redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN || null,
   },
 
   // 日志系统配置
@@ -87,7 +96,14 @@ const config = {
     forceHttps: parseBoolean(process.env.FORCE_HTTPS, false),
     securityHeaders: parseBoolean(process.env.SECURITY_HEADERS, true),
     apiKey: process.env.API_KEY || null,
+    apiKeys: parseArray(process.env.API_KEY, []), // 支持多个 API Key（逗号分隔）
     jwtSecret: process.env.JWT_SECRET || null,
+    // 端点保护配置
+    endpointProtection: {
+      enabled: parseBoolean(process.env.ENDPOINT_PROTECTION_ENABLED, true),
+      requireAuthForBatch: parseBoolean(process.env.REQUIRE_AUTH_FOR_BATCH, true),
+      requireAuthForCacheClear: parseBoolean(process.env.REQUIRE_AUTH_FOR_CACHE_CLEAR, true),
+    },
   },
 
   // 数据库配置（可选）
@@ -191,9 +207,25 @@ function validateConfig() {
   }
 
   // 验证限流存储方式
-  const validRateLimitStores = ['memory', 'redis'];
+  const validRateLimitStores = ['memory', 'redis', 'upstash'];
   if (!validRateLimitStores.includes(config.rateLimit.store)) {
     throw new Error(`RATE_LIMIT_STORE 必须是以下值之一: ${validRateLimitStores.join(', ')}`);
+  }
+
+  // 验证使用 Upstash 时必须提供配置
+  if (config.rateLimit.store === 'upstash') {
+    if (!config.upstash.redisRestUrl || !config.upstash.redisRestToken) {
+      throw new Error('使用 Upstash 限流时必须提供 UPSTASH_REDIS_REST_URL 和 UPSTASH_REDIS_REST_TOKEN');
+    }
+  }
+
+  // 验证限流配额
+  if (config.rateLimit.anonymous < 1) {
+    throw new Error('RATE_LIMIT_ANONYMOUS 必须大于 0');
+  }
+
+  if (config.rateLimit.authenticated < 1) {
+    throw new Error('RATE_LIMIT_AUTHENTICATED 必须大于 0');
   }
 
   // 验证环境模式

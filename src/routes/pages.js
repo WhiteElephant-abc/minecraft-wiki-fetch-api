@@ -7,6 +7,7 @@ const express = require('express');
 const PageController = require('../controllers/pageController');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validatePageParams, validateBatchPageParams, validateContentType } = require('../middleware/validation');
+const { conditionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 const pageController = new PageController();
@@ -41,6 +42,8 @@ router.get('/:pageName',
  * POST /api/pages
  * 批量获取Wiki页面内容
  * 
+ * 需要认证：是（可通过 ENDPOINT_PROTECTION_ENABLED 配置）
+ * 
  * 请求体:
  * {
  *   "pages": ["页面1", "页面2", "页面3"],
@@ -50,6 +53,7 @@ router.get('/:pageName',
  * }
  */
 router.post('/', 
+    conditionalAuth('batch'),
     validateContentType(['application/json']),
     validateBatchPageParams,
     asyncHandler(async (req, res) => {
@@ -78,6 +82,8 @@ router.get('/:pageName/exists',
  * DELETE /api/page/:pageName/cache
  * 清除页面缓存
  * 
+ * 需要认证：是（可通过 REQUIRE_AUTH_FOR_CACHE_CLEAR 配置）
+ * 
  * 路径参数:
  * - pageName: 页面名称 (必需, URL编码) 或 'all' 清除所有缓存
  * 
@@ -86,6 +92,7 @@ router.get('/:pageName/exists',
  * DELETE /api/page/all/cache
  */
 router.delete('/:pageName/cache', 
+    conditionalAuth('cacheClear'),
     asyncHandler(async (req, res) => {
         await pageController.clearPageCache(req, res);
     })
