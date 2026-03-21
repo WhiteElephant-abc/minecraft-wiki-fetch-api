@@ -5,6 +5,8 @@
 ## 功能特性
 
 - **Web 控制台**：访问根路径 `/` 即可使用可视化的 API 测试控制台
+- **API Key 认证**：支持静态 API Key 认证，保护敏感端点
+- **分布式速率限制**：支持 Upstash Redis 分布式限流，区分认证/未认证用户配额
 - Wiki 搜索：`GET /api/search`
 - 页面获取：`GET /api/page/:pageName`
 - 页面源代码（Wikitext）：`format=wikitext`
@@ -54,13 +56,57 @@ curl "https://your-project.vercel.app/api/page/工作台?format=wikitext&pretty=
 | `WIKI_BASE_URL` | `https://zh.minecraft.wiki` | Wiki 源站 |
 | `REQUEST_TIMEOUT` | `15000` | 外部请求超时（毫秒） |
 | `MAX_RETRIES` | `2` | 外部请求重试次数 |
-| `RATE_LIMIT_MAX` | `50` | 每窗口最大请求数 |
-| `RATE_LIMIT_WINDOW` | `60000` | 限流窗口（毫秒） |
+| `RATE_LIMIT_ANONYMOUS` | `30` | 未认证用户每分钟请求数 |
+| `RATE_LIMIT_AUTHENTICATED` | `100` | 认证用户每分钟请求数 |
+| `RATE_LIMIT_STORE` | `upstash` | 限流存储方式 |
+| `UPSTASH_REDIS_REST_URL` | - | Upstash Redis URL（分布式限流必需） |
+| `UPSTASH_REDIS_REST_TOKEN` | - | Upstash Redis Token |
+| `API_KEY` | - | API 密钥（支持多个，逗号分隔） |
 | `SEARCH_MAX_LIMIT` | `30` | 搜索最大条数 |
 | `ALLOWED_ORIGINS` | `*` | CORS 白名单（逗号分隔） |
 | `LOG_FILE` | `false` | Serverless 建议关闭文件日志 |
 
 完整示例见：`./.env.vercel`
+
+### API Key 认证
+
+设置 `API_KEY` 环境变量启用认证：
+
+```bash
+# Vercel CLI
+vercel env add API_KEY --env production
+
+# 或在 Vercel Dashboard 中设置
+```
+
+**使用方式**：
+
+```bash
+# 方式一：请求头
+curl -H "X-API-Key: your-api-key" https://your-api.vercel.app/api/pages
+
+# 方式二：查询参数
+curl "https://your-api.vercel.app/api/pages?api_key=your-api-key"
+```
+
+**端点保护规则**：
+
+| 端点 | 访问级别 | 说明 |
+| --- | --- | --- |
+| `/health/*` | 公开 | 无需认证，无限流 |
+| `/api/search` | 公开 | 无需认证，低限流 |
+| `/api/page/:name` | 公开 | 无需认证，低限流 |
+| `/api/pages` (POST) | **需认证** | 批量获取，高限流 |
+| `/api/page/:name/cache` (DELETE) | **需认证** | 清除缓存 |
+
+### 速率限制
+
+未配置 Upstash 时自动降级到内存存储（本地开发友好）。
+
+**配置项**：
+- `RATE_LIMIT_ANONYMOUS=30` - 未认证用户配额
+- `RATE_LIMIT_AUTHENTICATED=100` - 认证用户配额
+- `RATE_LIMIT_WINDOW=60000` - 时间窗口（毫秒）
 
 ## API 概览
 
@@ -137,6 +183,20 @@ npm run test:serverless
 ### 3. CORS 报错
 
 请在 Vercel 环境变量中正确设置 `ALLOWED_ORIGINS`，多个域名用逗号分隔。
+
+### 4. 批量获取返回 401 未认证
+
+`POST /api/pages` 端点需要有效的 API Key。请设置 `API_KEY` 环境变量，并在请求中通过 `X-API-Key` 请求头或 `api_key` 查询参数传递。
+
+### 5. 速率限制返回 429
+
+请求过于频繁，请检查响应头中的 `X-RateLimit-Reset` 了解限制重置时间。认证用户享有更高配额。
+
+### 6. Upstash 配置
+
+1. 访问 [Upstash Console](https://console.upstash.io) 创建 Redis 实例
+2. 复制 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`
+3. 在 Vercel 环境变量中添加这两个值
 
 ## 相关文档
 - [部署详解](./deploy-vercel.md)
