@@ -452,5 +452,12 @@ describe('HtmlToMarkdownConverter', () => {
             // 表格前后应该有适当的空行
             expect(markdown).toMatch(/段落前\n\n.*表格.*\n\n段落后/s);
         });
+
+        test('should preserve line breaks after Chinese punctuation', () => {
+            const markdown = '第一段结束。\n\n第二段开始，内容继续。';
+            const fixed = converter._fixChinesePunctuation(markdown);
+
+            expect(fixed).toBe(markdown);
+        });
     });
 });

@@ -515,8 +515,8 @@ class HtmlToMarkdownConverter {
      */
     _fixChinesePunctuation(markdown) {
         // 移除中文标点前后的不必要空格
-        return markdown.replace(/\s+([，。！？；：])/g, '$1')
-                      .replace(/([，。！？；：])\s+/g, '$1');
+        return markdown.replace(/[ \t]+([，。！？；：])/g, '$1')
+                      .replace(/([，。！？；：])[ \t]+/g, '$1');
     }
 
     /**
