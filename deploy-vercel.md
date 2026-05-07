@@ -79,17 +79,20 @@ ALLOWED_ORIGINS=*
 ```
 ├── api/
 │   └── index.js          # Vercel serverless 函数入口
+├── frontend/             # Vue + Vite 前端控制台
+│   ├── index.html
+│   └── src/
 ├── src/                  # 原有的应用代码
-├── vercel.json          # Vercel 配置文件
-├── .env.vercel          # Vercel 环境变量示例
-└── package.json         # 依赖配置
+├── vercel.json           # Vercel 构建与路由配置
+├── .env.vercel           # Vercel 环境变量示例
+└── package.json          # 依赖配置
 ```
 
 ## API 端点
 
 部署成功后，你的 API 将在以下端点可用：
 
-- `GET /` - API 信息和文档
+- `GET /` - Vue 前端控制台
 - `GET /api/search?q=钻石` - 搜索功能
 - `GET /api/page/钻石` - 获取页面内容
 - `POST /api/pages` - 批量获取页面

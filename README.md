@@ -162,9 +162,16 @@ npm run test:serverless
 
 项目当前使用 `api/index.js` 作为 serverless 入口，配合 `vercel.json` 路由转发，支持：
 
-- **根路径 `/`**：返回 `public/index.html` Web 控制台
+- **根路径 `/`**：返回 `frontend/` 下 Vue + Vite 构建出的 Web 控制台
 - API 路径 `/api` 与 `/api/*`
 - 健康检查 `/health` 与 `/health/*`
+
+前端开发命令：
+
+```bash
+npm run frontend:dev
+npm run build
+```
 
 ## 常见问题
 

@@ -103,7 +103,9 @@ app.use(requestLoggingMiddleware());
 // JSON格式化中间件
 app.use(jsonFormatterMiddleware());
 
-// 静态文件服务 - 必须在API路由之前挂载，使根路径/能正确返回index.html
+// 静态文件服务 - 必须在API路由之前挂载。优先提供 Vue 构建产物，
+// 未构建时回退到 legacy public 目录，便于本地开发兼容旧入口。
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Mount routes
