@@ -7,6 +7,7 @@ const PageUrlHandler = require('./pageUrlHandler');
 const PageContentParser = require('./pageContentParser');
 const HtmlToMarkdownConverter = require('./htmlToMarkdownConverter');
 const { HttpClient } = require('../utils/httpClient');
+const config = require('../config');
 const { logger } = require('../utils/logger');
 
 class WikiPageService {
@@ -14,7 +15,7 @@ class WikiPageService {
         // 服务配置
         this.options = {
             // 基础URL
-            baseUrl: 'https://zh.minecraft.wiki',
+            baseUrl: config.wiki.baseUrl,
             
             // 缓存配置
             cacheOptions: {
