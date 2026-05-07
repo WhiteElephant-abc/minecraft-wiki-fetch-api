@@ -52,3 +52,7 @@ pids
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Frontend build output
+frontend/dist/
+dist/
