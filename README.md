@@ -1,6 +1,6 @@
 ﻿# Minecraft Wiki API
 
-一个用于抓取、解析并转换中文 Minecraft Wiki 内容的 REST API，已适配 Vercel Serverless 部署。
+一个用于抓取、解析并转换中文 Minecraft Wiki 内容的 REST API，支持 Docker 和 Vercel Serverless 部署。
 
 ## 功能特性
 
@@ -31,19 +31,67 @@ vercel login
 npm run deploy
 ```
 
+## Docker 部署
+
+### 使用 docker compose（推荐）
+
+```bash
+git clone https://github.com/rice-awa/minecraft-wiki-fetch-api.git
+cd minecraft-wiki-fetch-api
+docker compose up -d
+```
+
+服务默认监听 `http://localhost:3000`。可通过 `.env` 文件或环境变量覆盖配置：
+
+```bash
+# 自定义端口
+PORT=8080 docker compose up -d
+
+# 或创建 .env 文件
+echo "PORT=8080" > .env
+docker compose up -d
+```
+
+### 使用 Docker 命令
+
+```bash
+docker build -t minecraft-wiki-api .
+docker run -d -p 3000:3000 --name mw-api minecraft-wiki-api
+```
+
+### Docker 环境变量
+
+Docker 环境下，部分变量默认值有所调整以适应容器化场景：
+
+| 变量名 | Docker 默认值 | 说明 |
+| --- | --- | --- |
+| `NODE_ENV` | `production` | 运行环境 |
+| `LOG_FILE` | `false` | 容器内建议关闭文件日志，输出到 stdout |
+| `RATE_LIMIT_STORE` | `memory` | 单机部署使用内存限流 |
+| `AUTO_PORT` | `false` | 容器端口固定，无需自动选择 |
+
+其余变量与下方环境变量表一致，通过 `docker compose` 的 `environment` 或 `docker run -e` 设置。
+
 ## 部署后验证
 
-将 `https://your-project.vercel.app` 替换为你的实际域名。
+将 `https://your-project.vercel.app` 替换为实际域名（Vercel），或使用 `http://localhost:3000`（Docker 本地）。
 
-**Web 控制台**：直接访问 `https://your-project.vercel.app/`
+**Web 控制台**：直接访问根路径 `/`
 
 **API 测试**：
 
 ```bash
+# Vercel
 curl https://your-project.vercel.app/health
 curl "https://your-project.vercel.app/api/search?q=钻石&limit=5&pretty=true"
 curl "https://your-project.vercel.app/api/page/钻石?format=markdown&pretty=true"
 curl "https://your-project.vercel.app/api/page/工作台?format=wikitext&pretty=true"
+
+# Docker 本地
+curl http://localhost:3000/health
+curl "http://localhost:3000/api/search?q=钻石&limit=5&pretty=true"
+curl "http://localhost:3000/api/page/钻石?format=markdown&pretty=true"
+curl "http://localhost:3000/api/page/工作台?format=wikitext&pretty=true"
 ```
 
 ## 环境变量（Vercel）
@@ -151,6 +199,12 @@ npm install
 npm run dev
 ```
 
+或使用 Docker：
+
+```bash
+docker compose up -d
+```
+
 本地模拟 Serverless：
 
 ```bash
@@ -199,7 +253,19 @@ npm run build
 
 请求过于频繁，请检查响应头中的 `X-RateLimit-Reset` 了解限制重置时间。认证用户享有更高配额。
 
-### 6. Upstash 配置
+### 6. Docker 容器无法启动
+
+检查容器日志定位问题：
+
+```bash
+docker compose logs
+```
+
+常见原因：
+- 端口被占用：修改 `PORT` 环境变量
+- 文件权限问题：Dockerfile 已内置处理，如仍有问题请提 issue
+
+### 7. Upstash 配置
 
 1. 访问 [Upstash Console](https://console.upstash.io) 创建 Redis 实例
 2. 复制 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`
