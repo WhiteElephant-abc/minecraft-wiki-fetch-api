@@ -27,7 +27,7 @@ services:
       - SEARCH_DEFAULT_LIMIT=${SEARCH_DEFAULT_LIMIT:-10}
       - SEARCH_MAX_LIMIT=${SEARCH_MAX_LIMIT:-50}
       - API_KEY=${API_KEY:-}
-      - ENDPOINT_PROTECTION_ENABLED=${ENDPOINT_PROTECTION_ENABLED:-false}
+      - ENDPOINT_PROTECTION_ENABLED=${ENDPOINT_PROTECTION_ENABLED:-true}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
