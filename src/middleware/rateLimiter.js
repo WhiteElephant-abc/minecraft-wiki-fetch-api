@@ -21,29 +21,23 @@ function initUpstashLimiter() {
   if (!config.upstash.redisRestUrl || !config.upstash.redisRestToken) {
     return null;
   }
-  
+
   const redis = new Redis({
     url: config.upstash.redisRestUrl,
     token: config.upstash.redisRestToken,
   });
-  
+
   // 创建两个限流器：匿名用户和认证用户
   return {
     anonymous: new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(
-        config.rateLimit.anonymous,
-        `${config.rateLimit.windowMs} ms`
-      ),
+      limiter: Ratelimit.slidingWindow(config.rateLimit.anonymous, `${config.rateLimit.windowMs} ms`),
       analytics: true,
       prefix: 'ratelimit:anon',
     }),
     authenticated: new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(
-        config.rateLimit.authenticated,
-        `${config.rateLimit.windowMs} ms`
-      ),
+      limiter: Ratelimit.slidingWindow(config.rateLimit.authenticated, `${config.rateLimit.windowMs} ms`),
       analytics: true,
       prefix: 'ratelimit:auth',
     }),
@@ -57,7 +51,7 @@ class MemoryRateLimiter {
   constructor() {
     this.requests = new Map();
     this.windowMs = config.rateLimit.windowMs;
-    
+
     // 定期清理过期记录
     setInterval(() => {
       const now = Date.now();
@@ -68,11 +62,11 @@ class MemoryRateLimiter {
       }
     }, this.windowMs);
   }
-  
+
   async limit(identifier, maxRequests) {
     const now = Date.now();
     const record = this.requests.get(identifier);
-    
+
     if (!record || now - record.startTime > this.windowMs) {
       // 新窗口
       this.requests.set(identifier, { count: 1, startTime: now });
@@ -83,7 +77,7 @@ class MemoryRateLimiter {
         reset: now + this.windowMs,
       };
     }
-    
+
     if (record.count >= maxRequests) {
       // 超过限制
       return {
@@ -93,7 +87,7 @@ class MemoryRateLimiter {
         reset: record.startTime + this.windowMs,
       };
     }
-    
+
     // 增加计数
     record.count++;
     return {
@@ -119,7 +113,7 @@ function getLimiter() {
       return { type: 'upstash', limiter: upstashLimiter };
     }
   }
-  
+
   // 降级到内存存储
   if (!memoryStore) {
     memoryStore = new MemoryRateLimiter();
@@ -135,34 +129,30 @@ async function rateLimitMiddleware(req, res, next) {
   if (config.rateLimit.skipHealthCheck && req.path.startsWith('/health')) {
     return next();
   }
-  
+
   const { type, limiter } = getLimiter();
   const identifier = getClientIdentifier(req);
-  
+
   // 根据认证状态选择不同的配额
-  const maxRequests = req.authenticated
-    ? config.rateLimit.authenticated
-    : config.rateLimit.anonymous;
-  
+  const maxRequests = req.authenticated ? config.rateLimit.authenticated : config.rateLimit.anonymous;
+
   try {
     let result;
-    
+
     if (type === 'upstash') {
       // 使用 Upstash 限流器
-      const rateLimiter = req.authenticated
-        ? limiter.authenticated
-        : limiter.anonymous;
+      const rateLimiter = req.authenticated ? limiter.authenticated : limiter.anonymous;
       result = await rateLimiter.limit(identifier);
     } else {
       // 使用内存限流器
       result = await limiter.limit(identifier, maxRequests);
     }
-    
+
     // 设置响应头
     res.setHeader('X-RateLimit-Limit', result.limit);
     res.setHeader('X-RateLimit-Remaining', result.remaining);
     res.setHeader('X-RateLimit-Reset', result.reset);
-    
+
     if (!result.success) {
       const error = new RateLimitError('请求过于频繁，请稍后再试');
       error.details = {
@@ -171,13 +161,13 @@ async function rateLimitMiddleware(req, res, next) {
         reset: new Date(result.reset).toISOString(),
         retryAfter: Math.ceil((result.reset - Date.now()) / 1000),
       };
-      
+
       // 设置 Retry-After 头
       res.setHeader('Retry-After', error.details.retryAfter);
-      
+
       return next(error);
     }
-    
+
     return next();
   } catch (err) {
     console.error('Rate limiter error:', err);
@@ -191,7 +181,7 @@ async function rateLimitMiddleware(req, res, next) {
 /**
  * 创建自定义限流中间件
  * 用于特定端点的更严格限流
- * 
+ *
  * @param {object} options - 限流选项
  * @param {number} options.max - 最大请求数
  * @param {number} options.windowMs - 时间窗口（毫秒）
@@ -200,9 +190,9 @@ async function rateLimitMiddleware(req, res, next) {
 function createRateLimiter(options = {}) {
   const max = options.max || config.rateLimit.anonymous;
   const windowMs = options.windowMs || config.rateLimit.windowMs;
-  
+
   const store = new Map();
-  
+
   // 定期清理
   setInterval(() => {
     const now = Date.now();
@@ -212,19 +202,19 @@ function createRateLimiter(options = {}) {
       }
     }
   }, windowMs);
-  
+
   return async (req, res, next) => {
     const identifier = getClientIdentifier(req);
     const now = Date.now();
     const record = store.get(identifier);
-    
+
     if (!record || now - record.startTime > windowMs) {
       store.set(identifier, { count: 1, startTime: now });
       res.setHeader('X-RateLimit-Limit', max);
       res.setHeader('X-RateLimit-Remaining', max - 1);
       return next();
     }
-    
+
     if (record.count >= max) {
       const error = new RateLimitError('请求过于频繁，请稍后再试');
       error.details = {
@@ -235,7 +225,7 @@ function createRateLimiter(options = {}) {
       res.setHeader('Retry-After', error.details.retryAfter);
       return next(error);
     }
-    
+
     record.count++;
     res.setHeader('X-RateLimit-Limit', max);
     res.setHeader('X-RateLimit-Remaining', max - record.count);

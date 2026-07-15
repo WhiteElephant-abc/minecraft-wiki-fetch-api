@@ -16,7 +16,7 @@ function isPortAvailable(port, host = '0.0.0.0') {
   return new Promise((resolve) => {
     const server = net.createServer();
     let resolved = false;
-    
+
     // Set a timeout to avoid hanging
     const timeout = setTimeout(() => {
       if (!resolved) {
@@ -29,7 +29,7 @@ function isPortAvailable(port, host = '0.0.0.0') {
         resolve(false);
       }
     }, 1500);
-    
+
     const cleanup = (result) => {
       if (!resolved) {
         resolved = true;
@@ -37,25 +37,25 @@ function isPortAvailable(port, host = '0.0.0.0') {
         resolve(result);
       }
     };
-    
+
     server.on('error', (err) => {
       cleanup(false);
     });
-    
+
     server.on('listening', () => {
       // Port is available, close the server
       server.close((err) => {
         cleanup(true);
       });
     });
-    
+
     // Set server options to avoid IPv6 issues
     server.on('close', () => {
       if (!resolved) {
         cleanup(true);
       }
     });
-    
+
     try {
       // Use explicit IPv4 if host is 0.0.0.0
       const listenHost = host === '0.0.0.0' ? '127.0.0.1' : host;
@@ -76,17 +76,17 @@ function isPortAvailable(port, host = '0.0.0.0') {
 async function findAvailablePort(startPort, maxAttempts = 100, host = '0.0.0.0') {
   for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i;
-    
+
     // Skip invalid port numbers
     if (port < 1 || port > 65535) {
       continue;
     }
-    
+
     if (await isPortAvailable(port, host)) {
       return port;
     }
   }
-  
+
   return null;
 }
 
@@ -102,11 +102,11 @@ async function findAvailablePort(startPort, maxAttempts = 100, host = '0.0.0.0')
  */
 async function getAvailablePort(preferredPort, options = {}) {
   const { maxAttempts = 100, logAttempts = true, host = '0.0.0.0' } = options;
-  
+
   if (logAttempts) {
     logger.info(`Checking port availability`, { preferredPort });
   }
-  
+
   // First, try the preferred port
   if (await isPortAvailable(preferredPort, host)) {
     if (logAttempts) {
@@ -114,32 +114,34 @@ async function getAvailablePort(preferredPort, options = {}) {
     }
     return preferredPort;
   }
-  
+
   if (logAttempts) {
     logger.warn(`Port ${preferredPort} is already in use, searching for alternative...`);
   }
-  
+
   // Find next available port
   const availablePort = await findAvailablePort(preferredPort + 1, maxAttempts, host);
-  
+
   if (availablePort === null) {
-    const error = new Error(`No available port found after checking ${maxAttempts} ports starting from ${preferredPort}`);
-    logger.error('Port search failed', { 
-      preferredPort, 
-      maxAttempts, 
-      error: error.message 
+    const error = new Error(
+      `No available port found after checking ${maxAttempts} ports starting from ${preferredPort}`
+    );
+    logger.error('Port search failed', {
+      preferredPort,
+      maxAttempts,
+      error: error.message,
     });
     throw error;
   }
-  
+
   if (logAttempts) {
-    logger.info(`Found available port ${availablePort}`, { 
-      preferredPort, 
+    logger.info(`Found available port ${availablePort}`, {
+      preferredPort,
       selectedPort: availablePort,
-      portsChecked: availablePort - preferredPort
+      portsChecked: availablePort - preferredPort,
     });
   }
-  
+
   return availablePort;
 }
 
@@ -154,15 +156,15 @@ async function getAvailablePort(preferredPort, options = {}) {
 async function waitForPort(port, options = {}) {
   const { timeout = 30000, interval = 1000 } = options;
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     if (await isPortAvailable(port)) {
       return true;
     }
-    
-    await new Promise(resolve => setTimeout(resolve, interval));
+
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   return false;
 }
 
@@ -187,10 +189,10 @@ function validatePort(port) {
  */
 async function startServerSafely(app, preferredPort, host = '0.0.0.0', options = {}) {
   const { maxAttempts = 100, logAttempts = true } = options;
-  
+
   let currentPort = preferredPort;
   let lastError = null;
-  
+
   // Try up to maxAttempts different ports
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -199,7 +201,7 @@ async function startServerSafely(app, preferredPort, host = '0.0.0.0', options =
         currentPort++;
         continue;
       }
-      
+
       // Try to start the server immediately
       let startupTimeoutId = null;
       let onError = null;
@@ -211,40 +213,39 @@ async function startServerSafely(app, preferredPort, host = '0.0.0.0', options =
           }
           resolve(serverInstance);
         });
-        
+
         onError = (error) => {
           reject(error);
         };
         serverInstance.on('error', onError);
-        
+
         // Set a timeout for server startup
         startupTimeoutId = setTimeout(() => {
           reject(new Error(`Server startup timeout on port ${currentPort}`));
         }, 3000);
       });
-      
+
       clearTimeout(startupTimeoutId);
       server.removeListener('error', onError);
-      
+
       // Success!
       if (logAttempts && currentPort !== preferredPort) {
         logger.info(`Server started on alternative port ${currentPort}`, {
           preferredPort,
           actualPort: currentPort,
-          attemptsUsed: attempt + 1
+          attemptsUsed: attempt + 1,
         });
       }
-      
+
       return { server, port: currentPort };
-      
     } catch (error) {
       lastError = error;
-      
+
       if (error.code === 'EADDRINUSE') {
         if (logAttempts && attempt < 3) {
           logger.debug(`Port ${currentPort} in use, trying next port...`, {
             attempt: attempt + 1,
-            maxAttempts
+            maxAttempts,
           });
         }
         currentPort++;
@@ -255,7 +256,7 @@ async function startServerSafely(app, preferredPort, host = '0.0.0.0', options =
       }
     }
   }
-  
+
   // If we get here, all attempts failed
   const error = new Error(`Failed to start server after trying ${maxAttempts} ports starting from ${preferredPort}`);
   error.lastError = lastError;
@@ -268,5 +269,5 @@ module.exports = {
   getAvailablePort,
   waitForPort,
   validatePort,
-  startServerSafely
+  startServerSafely,
 };

@@ -24,7 +24,7 @@ function isValidApiKey(providedKey) {
 
   const validKeys = config.security.apiKeys;
   if (validKeys && validKeys.length > 0) {
-    return validKeys.some(k => safeEqual(providedKey, k));
+    return validKeys.some((k) => safeEqual(providedKey, k));
   }
 
   if (config.security.apiKey) {
@@ -56,27 +56,27 @@ function extractApiKey(req) {
 /**
  * 认证中间件
  * 验证请求中的 API Key，设置 req.authenticated 标志
- * 
+ *
  * 如果未配置 API_KEY，则所有请求都视为已认证（向后兼容）
  */
 function authMiddleware(req, res, next) {
   const hasApiKeyConfig = config.security.apiKeys.length > 0 || config.security.apiKey;
-  
+
   // 未配置 API Key 时，所有请求视为已认证
   if (!hasApiKeyConfig) {
     req.authenticated = true;
     req.authType = 'none';
     return next();
   }
-  
+
   const providedKey = extractApiKey(req);
-  
+
   if (isValidApiKey(providedKey)) {
     req.authenticated = true;
     req.authType = 'apikey';
     return next();
   }
-  
+
   // 未提供或无效的 API Key
   req.authenticated = false;
   req.authType = 'anonymous';
@@ -91,40 +91,40 @@ function requireAuth(req, res, next) {
   if (req.authenticated) {
     return next();
   }
-  
+
   const error = new AuthenticationError('此端点需要有效的 API Key');
   error.details = {
     hint: '请在请求头中添加 X-API-Key 或 Authorization: Bearer <key>',
     endpoint: req.originalUrl,
   };
-  
+
   return next(error);
 }
 
 /**
  * 条件认证中间件
  * 根据配置决定是否需要认证
- * 
+ *
  * @param {string} feature - 功能名称（如 'batch', 'cacheClear'）
  * @returns {function} Express 中间件
  */
 function conditionalAuth(feature) {
   return (req, res, next) => {
     const protection = config.security.endpointProtection;
-    
+
     // 如果端点保护未启用，直接放行
     if (!protection.enabled) {
       return next();
     }
-    
+
     // 检查特定功能的保护配置
     const featureMap = {
       batch: protection.requireAuthForBatch,
       cacheClear: protection.requireAuthForCacheClear,
     };
-    
+
     const requiresAuth = featureMap[feature];
-    
+
     if (requiresAuth && !req.authenticated) {
       const error = new AuthenticationError(`此功能需要有效的 API Key`);
       error.details = {
@@ -133,7 +133,7 @@ function conditionalAuth(feature) {
       };
       return next(error);
     }
-    
+
     return next();
   };
 }
@@ -141,7 +141,7 @@ function conditionalAuth(feature) {
 /**
  * 获取客户端标识符
  * 用于限流的 key
- * 
+ *
  * @param {object} req - Express 请求对象
  * @returns {string} 客户端标识符
  */

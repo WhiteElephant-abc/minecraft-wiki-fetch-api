@@ -7,14 +7,14 @@ const path = require('path');
 const config = require('./config');
 const { logger, requestLoggingMiddleware } = require('./utils/logger');
 const { getAvailablePort, startServerSafely } = require('./utils/portManager');
-const { 
-  asyncHandler, 
-  notFoundHandler, 
-  errorHandler, 
-  validateRequest, 
-  sanitizeParams, 
+const {
+  asyncHandler,
+  notFoundHandler,
+  errorHandler,
+  validateRequest,
+  sanitizeParams,
   requestIdHandler,
-  corsErrorHandler 
+  corsErrorHandler,
 } = require('./middleware/errorHandler');
 const { jsonFormatterMiddleware } = require('./middleware/jsonFormatter');
 const { authMiddleware } = require('./middleware/auth');
@@ -30,42 +30,48 @@ app.set('trust proxy', 1);
 app.use(requestIdHandler);
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // CORS with error handling
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    const allowedOrigins = config.security.allowedOrigins;
-    if (allowedOrigins.includes('*')) {
-      logger.warn('CORS allowedOrigins is "*" but credentials:true — refusing wildcard; set ALLOWED_ORIGINS explicitly');
-      return callback(null, false);
-    }
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    const error = new Error(`Origin ${origin} not allowed by CORS policy`);
-    error.statusCode = 403;
-    callback(error);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key']
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      const allowedOrigins = config.security.allowedOrigins;
+      if (allowedOrigins.includes('*')) {
+        logger.warn(
+          'CORS allowedOrigins is "*" but credentials:true — refusing wildcard; set ALLOWED_ORIGINS explicitly'
+        );
+        return callback(null, false);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      const error = new Error(`Origin ${origin} not allowed by CORS policy`);
+      error.statusCode = 403;
+      callback(error);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key'],
+  })
+);
 app.use(corsErrorHandler);
 
 // Authentication middleware (must be before rate limiter)
@@ -75,27 +81,33 @@ app.use(authMiddleware);
 app.use(rateLimitMiddleware);
 
 // Request validation and sanitization
-app.use(validateRequest({
-  maxBodySize: '10mb',
-  allowedContentTypes: ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'],
-  requireContentType: false
-}));
+app.use(
+  validateRequest({
+    maxBodySize: '10mb',
+    allowedContentTypes: ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'],
+    requireContentType: false,
+  })
+);
 app.use(sanitizeParams);
 
 // Body parsing middleware with error handling
-app.use(express.json({
-  limit: '10mb',
-  type: 'application/json',
-  charset: 'utf-8'
-}));
+app.use(
+  express.json({
+    limit: '10mb',
+    type: 'application/json',
+    charset: 'utf-8',
+  })
+);
 
-app.use(express.urlencoded({
-  extended: true,
-  limit: '10mb',
-  parameterLimit: 1000,
-  type: 'application/x-www-form-urlencoded',
-  charset: 'utf-8'
-}));
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 1000,
+    type: 'application/x-www-form-urlencoded',
+    charset: 'utf-8',
+  })
+);
 
 // Request logging middleware
 app.use(requestLoggingMiddleware());
@@ -113,37 +125,40 @@ app.use('/health', healthRoutes);
 app.use('/api', apiRoutes);
 
 // API 信息端点 - 返回API基本信息和可用端点列表
-app.get('/api', asyncHandler(async (req, res) => {
-  const healthInfo = {
-    status: 'healthy',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    nodeVersion: process.version,
-    environment: config.server.nodeEnv
-  };
+app.get(
+  '/api',
+  asyncHandler(async (req, res) => {
+    const healthInfo = {
+      status: 'healthy',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0',
+      nodeVersion: process.version,
+      environment: config.server.nodeEnv,
+    };
 
-  res.json({
-    name: 'Minecraft Wiki API',
-    version: '1.0.0',
-    description: 'API service for scraping Minecraft Chinese Wiki content',
-    status: healthInfo,
-    endpoints: {
-      search: 'GET /api/search?q={keyword}&limit={number}&pretty={true|false}',
-      page: 'GET /api/page/{pageName}?format={html|markdown|both|wikitext}&pretty={true|false}',
-      batchPages: 'POST /api/pages',
-      pageExists: 'GET /api/page/{pageName}/exists',
-      health: 'GET /health',
-      healthDetailed: 'GET /health/detailed',
-      ready: 'GET /health/ready',
-      live: 'GET /health/live'
-    },
-    documentation: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/tree/main/docs',
-    contact: {
-      support: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/issues'
-    }
-  });
-}));
+    res.json({
+      name: 'Minecraft Wiki API',
+      version: '1.0.0',
+      description: 'API service for scraping Minecraft Chinese Wiki content',
+      status: healthInfo,
+      endpoints: {
+        search: 'GET /api/search?q={keyword}&limit={number}&pretty={true|false}',
+        page: 'GET /api/page/{pageName}?format={html|markdown|both|wikitext}&pretty={true|false}',
+        batchPages: 'POST /api/pages',
+        pageExists: 'GET /api/page/{pageName}/exists',
+        health: 'GET /health',
+        healthDetailed: 'GET /health/detailed',
+        ready: 'GET /health/ready',
+        live: 'GET /health/live',
+      },
+      documentation: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/tree/main/docs',
+      contact: {
+        support: 'https://github.com/rice-awa/minecraft-wiki-fetch-api/issues',
+      },
+    });
+  })
+);
 
 // 404 handler - using the new middleware
 app.use('*', notFoundHandler);
@@ -168,22 +183,22 @@ async function startServer() {
       // Use the safe server startup method
       const result = await startServerSafely(app, config.server.port, config.server.host, {
         maxAttempts: config.server.maxPortAttempts,
-        logAttempts: true
+        logAttempts: true,
       });
-      
+
       server = result.server;
       serverPort = result.port;
     } else {
       // If auto port is disabled, just validate the configured port and start normally
       const { validatePort } = require('./utils/portManager');
       validatePort(config.server.port);
-      
+
       logger.info('Auto port selection is disabled, using configured port', {
-        port: config.server.port
+        port: config.server.port,
       });
-      
+
       serverPort = config.server.port;
-      
+
       // Start the server on the configured port
       server = await new Promise((resolve, reject) => {
         const serverInstance = app.listen(serverPort, config.server.host, (err) => {
@@ -193,7 +208,7 @@ async function startServer() {
           }
           resolve(serverInstance);
         });
-        
+
         serverInstance.on('error', (error) => {
           reject(error);
         });
@@ -208,16 +223,16 @@ async function startServer() {
       wikiBaseUrl: config.wiki.baseUrl,
       originalPort: config.server.port,
       portChanged: serverPort !== config.server.port,
-      autoPortEnabled: config.server.autoPort
+      autoPortEnabled: config.server.autoPort,
     };
 
     logger.info(`Server started successfully`, serverInfo);
-    
+
     // Console output
     if (config.server.autoPort && serverPort !== config.server.port) {
       console.log(`⚠️  Port ${config.server.port} was occupied, server started on port ${serverPort}`);
     }
-    
+
     const hostDisplay = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
     console.log(`🚀 Minecraft Wiki API server started on http://${hostDisplay}:${serverPort}`);
     console.log(`📋 API endpoints:`);
@@ -228,7 +243,7 @@ async function startServer() {
     console.log(`   - GET /api/page/钻石`);
     console.log(`   - POST /api/pages`);
     console.log(`   - GET /health`);
-    
+
     if (config.server.autoPort && serverPort !== config.server.port) {
       console.log(`\n💡 Tip: Update your PORT environment variable to ${serverPort} to avoid port conflicts`);
       console.log(`   Or set AUTO_PORT=false to disable automatic port selection`);
@@ -239,7 +254,7 @@ async function startServer() {
       logger.error('Unexpected server error after startup', {
         error: error.message,
         code: error.code,
-        port: serverPort
+        port: serverPort,
       });
       console.error(`❌ Unexpected server error: ${error.message}`);
       process.exit(1);
@@ -249,7 +264,7 @@ async function startServer() {
     const gracefulShutdown = (signal) => {
       logger.info(`Received ${signal}, shutting down gracefully`);
       console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
-      
+
       server.close((err) => {
         if (err) {
           logger.error('Error during server shutdown', { error: err.message });
@@ -266,21 +281,20 @@ async function startServer() {
     // Handle termination signals
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
   } catch (error) {
     logger.error('Failed to start server', {
       error: error.message,
       configuredPort: config.server.port,
-      autoPortEnabled: config.server.autoPort
+      autoPortEnabled: config.server.autoPort,
     });
     console.error(`❌ Failed to start server: ${error.message}`);
-    
+
     if (config.server.autoPort) {
       console.error('   Please check if all ports in the range are available or increase MAX_PORT_ATTEMPTS.');
     } else {
       console.error('   Please choose a different port or enable AUTO_PORT=true for automatic port selection.');
     }
-    
+
     process.exit(1);
   }
 }
