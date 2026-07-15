@@ -3,6 +3,7 @@
  * 支持静态 API Key 验证
  */
 
+const crypto = require('crypto');
 const config = require('../config');
 const { AuthenticationError } = require('../utils/errors');
 
@@ -146,34 +147,15 @@ function conditionalAuth(feature) {
  * @returns {string} 客户端标识符
  */
 function getClientIdentifier(req) {
-  // 如果已认证，使用 API Key 的 hash
   if (req.authenticated && req.authType === 'apikey') {
     const key = extractApiKey(req);
     return `auth:${hashApiKey(key)}`;
   }
-  
-  // 否则使用 IP 地址
-  const ip = req.ip || 
-             req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-             req.connection?.remoteAddress ||
-             'unknown';
-  
-  return `anon:${ip}`;
+  return `anon:${req.ip || 'unknown'}`;
 }
 
-/**
- * 简单的 API Key hash（用于标识，非加密）
- * @param {string} key - API Key
- * @returns {string} Hash 值
- */
 function hashApiKey(key) {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    const char = key.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16);
+  return crypto.createHash('sha256').update(String(key)).digest('hex').slice(0, 16);
 }
 
 module.exports = {

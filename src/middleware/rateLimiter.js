@@ -180,9 +180,11 @@ async function rateLimitMiddleware(req, res, next) {
     
     return next();
   } catch (err) {
-    // 限流器出错时放行，避免影响正常请求
     console.error('Rate limiter error:', err);
-    return next();
+    const error = new RateLimitError('限流服务暂时不可用，请稍后再试');
+    error.details = { retryAfter: Math.ceil(config.rateLimit.windowMs / 1000) };
+    res.setHeader('Retry-After', error.details.retryAfter);
+    return next(error);
   }
 }
 
