@@ -440,4 +440,47 @@ describe('PageContentParser', () => {
             expect(result.data).toBeNull();
         });
     });
+
+    describe('pageContentParser edge cases', () => {
+        const wrap = (body) => `<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+    <div id="mw-head"></div>
+    <div id="content">
+        <h1 id="firstHeading">Test</h1>
+        <div id="mw-content-text">
+            <div class="mw-parser-output">${body}</div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        test('removes data-* attributes without crashing', () => {
+            const html = wrap('<div class="infobox" data-id="1" data-x="2"><p>hi</p></div>');
+            const result = parser.parsePageContent(html);
+
+            expect(result.success).toBe(true);
+            expect(result.data.content.html).not.toContain('data-id');
+            expect(result.data.content.html).not.toContain('data-x');
+        });
+
+        test('handles infobox without class attribute (no TypeError)', () => {
+            const html = wrap('<table class="infobox"><tbody><tr><td>x</td></tr></tbody></table>');
+            const result = parser.parsePageContent(html);
+
+            expect(result.success).toBe(true);
+            expect(result.data.content.components.infoboxes).toHaveLength(1);
+            expect(result.data.content.components.infoboxes[0].type).toBe('infobox');
+        });
+
+        test('merges consecutive same tags safely without skipping', () => {
+            const html = wrap('<p>A</p><p>B</p><p>C</p><br><br><br>');
+            const result = parser.parsePageContent(html);
+
+            expect(result.success).toBe(true);
+            expect(result.data.content.html).toContain('<p>A B C</p>');
+            expect((result.data.content.html.match(/<br>/g) || []).length).toBe(1);
+        });
+    });
 });
