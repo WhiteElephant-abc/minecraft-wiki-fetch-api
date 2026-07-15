@@ -238,8 +238,11 @@ claude mcp add --transport http zh-minecraft-wiki http://localhost:3001/mcp
 
 | 工具 | 用途 |
 |---|---|
-| `search_wiki(q, limit)` | 搜索 Wiki 页面，返回标题、URL、摘要 |
-| `get_page(pageName, format)` | 获取页面内容，`format` 可选 `wikitext`（默认，最完整）、`markdown`、`html` |
+| `search_wiki(q, limit, namespaces)` | 搜索 Wiki 页面，`namespaces` 可限定数字ID |
+| `get_page(pageName, format, useCache, includeMetadata)` | 获取页面，`format`：`wikitext`（默认）、`markdown`、`html` |
+| `check_page_exists(pageName)` | 检查页面是否存在 |
+| `check_health()` | 检查 API 服务健康状态 |
+| `list_namespaces()` | 获取命名空间映射表（数字ID → 名称） |
 
 ## 本地开发
 

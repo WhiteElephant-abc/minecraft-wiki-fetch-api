@@ -26,8 +26,8 @@ class SearchUrlBuilder {
         }
 
         const {
-            limit = 20,
-            namespaces = ['0'],
+            limit = 10,
+            namespaces = [],
             profile = 'advanced',
             fulltext = true,
             includeSearchToken = false
@@ -40,7 +40,7 @@ class SearchUrlBuilder {
 
         const searchParams = new URLSearchParams({
             search: keyword.trim(),
-            title: 'Special:搜索',
+            title: 'Special:Search',
             profile: profile,
             fulltext: fulltext ? '1' : '0',
             limit: limit.toString()
@@ -92,44 +92,13 @@ class SearchUrlBuilder {
     }
 
     /**
-     * Get available namespace mappings for MC Wiki
-     * @returns {Object} Namespace ID to name mappings
-     */
-    getNamespaces() {
-        return {
-            '0': 'Main',           // 主要
-            '1': 'Talk',           // 讨论
-            '2': 'User',           // 用户
-            '3': 'User_talk',      // 用户讨论
-            '4': 'Project',        // 项目
-            '5': 'Project_talk',   // 项目讨论
-            '6': 'File',           // 文件
-            '7': 'File_talk',      // 文件讨论
-            '8': 'MediaWiki',      // MediaWiki
-            '9': 'MediaWiki_talk', // MediaWiki讨论
-            '10': 'Template',      // 模板
-            '11': 'Template_talk', // 模板讨论
-            '12': 'Help',          // 帮助
-            '13': 'Help_talk',     // 帮助讨论
-            '14': 'Category',      // 分类
-            '15': 'Category_talk', // 分类讨论
-            '9994': 'Module',      // 模块
-            '9996': 'Gadget',      // 小工具
-            '9998': 'Gadget_definition', // 小工具定义
-            '10000': 'Data',       // 数据
-            '10002': 'Data_talk',  // 数据讨论
-            '10004': 'Widget',     // 小部件
-            '10006': 'Widget_talk', // 小部件讨论
-            '10010': 'Config'      // 配置
-        };
-    }
-
-    /**
-     * Get default MC Wiki namespaces for comprehensive search
-     * @returns {Array<string>} Array of namespace IDs
+     * 从 mcwiki 官方搜索配置提取的默认命名空间。
+     * 来源：Special:Search 页面取消勾选 Main 后显示的默认勾选项。
+     * @returns {Array<string>}
      */
     getDefaultNamespaces() {
-        return ['0', '9994', '9996', '9998', '10000', '10002', '10004', '10006', '10010'];
+        return ['0', '4', '10', '12', '9998', '10014'];
+        //         Main  ^MCWiki^Templ^Help ^Tutorial^Dungeons II
     }
 
     /**

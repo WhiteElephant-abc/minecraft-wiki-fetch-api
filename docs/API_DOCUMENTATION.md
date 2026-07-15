@@ -63,6 +63,7 @@ curl "http://localhost:3000/api/page/钻石?format=markdown"
 | 根端点 | `/` | GET | API 信息和端点列表 |
 | 搜索 | `/api/search` | GET | 搜索 Wiki 内容 |
 | 搜索统计 | `/api/search/stats` | GET | 搜索服务统计信息 |
+| 命名空间 | `/api/search/namespaces` | GET | 获取命名空间映射表 |
 | 页面内容 | `/api/page/:pageName` | GET | 获取指定页面内容 |
 | 页面存在性 | `/api/page/:pageName/exists` | GET | 检查页面是否存在 |
 | 批量页面 | `/api/pages` | POST | 批量获取多个页面 |
@@ -85,7 +86,7 @@ curl "http://localhost:3000/api/page/钻石?format=markdown"
 **查询参数:**
 - `q` (必需): 搜索关键词
 - `limit` (可选): 结果数量限制，默认10，最大50
-- `namespaces` (可选): 命名空间，多个用逗号分隔
+- `namespaces` (可选): 限定命名空间，数字ID，多个用逗号分隔。默认使用 Wiki 官方搜索配置（0,4,10,12,9998,10014）。可通过 `/api/search/namespaces` 查询可用命名空间
 - `format` (可选): 响应格式，默认 json
 - `pretty` (可选): JSON格式化，支持 true/false/1/0/yes/no，默认 false
 
@@ -93,6 +94,7 @@ curl "http://localhost:3000/api/page/钻石?format=markdown"
 ```
 GET /api/search?q=钻石&limit=5
 GET /api/search?q=redstone&namespaces=0,14&limit=10
+GET /api/search?q=minecraft&namespaces=10000&limit=10
 GET /api/search?q=钻石&pretty=true
 ```
 
@@ -142,6 +144,25 @@ GET /api/search?q=钻石&pretty=true
       "uptime": 3600,
       "memory": {...},
       "timestamp": "2024-01-01T12:00:00Z"
+    }
+  }
+}
+```
+
+#### GET /api/search/namespaces
+获取 Minecraft Wiki 的命名空间映射表，数据来源为 Wiki 实时配置（缓存1小时）。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "namespaces": {
+      "0": "Main",
+      "10": "Template",
+      "14": "Category",
+      "828": "Module",
+      "10000": "Dungeons"
     }
   }
 }

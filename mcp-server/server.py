@@ -2,6 +2,7 @@
 
 import os
 from typing import Annotated
+from urllib.parse import quote
 import httpx
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -15,17 +16,18 @@ mcp = FastMCP("Minecraft Wiki", host="0.0.0.0", port=3001)
 async def search_wiki(
     q: Annotated[str, Field(description="搜索关键词，支持中文。例如 '钻石'、'红石'、'命令'")],
     limit: Annotated[int, Field(description="返回结果数量，默认 10，最大 50")] = 10,
+    namespaces: Annotated[list[int], Field(default=[], description="限定命名空间，数字ID列表。0=Main 10=Template 14=Category 9994=Module。空则使用默认值")] = [],
 ) -> str:
     """搜索 Minecraft 中文 Wiki。
 
     根据关键词查找匹配的 Wiki 页面，返回标题、URL 和摘要。
     当你需要了解某个游戏概念、物品、机制时使用此工具。"""
     try:
+        params: dict = {"q": q, "limit": min(limit, 50)}
+        if namespaces:
+            params["namespaces"] = ",".join(str(n) for n in namespaces)
         async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
-            resp = await client.get(
-                f"{API_BASE}/api/search",
-                params={"q": q, "limit": min(limit, 50)},
-            )
+            resp = await client.get(f"{API_BASE}/api/search", params=params)
             data = resp.json()
     except Exception as e:
         return f"搜索失败: API 服务不可用 ({e})"
@@ -57,6 +59,8 @@ async def get_page(
             description="输出格式：wikitext（默认，最完整，推荐）、markdown、html（仅在 wikitext 模板无法理解时使用）",
         ),
     ] = "wikitext",
+    useCache: Annotated[bool, Field(description="是否使用缓存，默认 true")] = True,
+    includeMetadata: Annotated[bool, Field(description="是否包含元数据，默认 true")] = True,
 ) -> str:
     """获取 Minecraft 中文 Wiki 页面的内容。
 
@@ -73,10 +77,11 @@ async def get_page(
         return f"无效的 format: {format}，可选值: {', '.join(valid_formats)}"
 
     try:
+        params = {"format": format, "useCache": str(useCache).lower()}
         async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
             resp = await client.get(
-                f"{API_BASE}/api/page/{pageName}",
-                params={"format": format},
+                f"{API_BASE}/api/page/{quote(pageName)}",
+                params=params,
             )
             data = resp.json()
     except Exception as e:
@@ -98,15 +103,96 @@ async def get_page(
     elif format == "html":
         content = page["content"]["html"]
 
-    meta = page.get("meta", {})
-    info_lines = [
-        f"# {page['pageName']}",
-        f"URL: {page['url']}",
-        f"格式: {format}  |  字数: {meta.get('wordCount', 'N/A')}",
-        "",
-        content,
-    ]
+    info_lines = [f"# {page['pageName']}", f"URL: {page['url']}"]
+
+    if includeMetadata:
+        meta = page.get("meta", {})
+        info_lines.append(
+            f"格式: {format}  |  字数: {meta.get('wordCount', 'N/A')}  |  段落: {meta.get('sectionCount', 'N/A')}"
+        )
+    else:
+        info_lines.append(f"格式: {format}")
+
+    info_lines.extend(["", content])
     return "\n".join(info_lines)
+
+
+@mcp.tool()
+async def check_page_exists(
+    pageName: Annotated[str, Field(description="页面名称，支持中文")],
+) -> str:
+    """检查页面是否存在。"""
+    try:
+        async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
+            resp = await client.get(f"{API_BASE}/api/page/{pageName}/exists")
+            data = resp.json()
+    except Exception as e:
+        return f"检查失败: API 服务不可用 ({e})"
+
+    if not data.get("success"):
+        return f"检查失败: {data.get('error', {}).get('message', '未知错误')}"
+
+    info = data["data"]
+    if info["exists"]:
+        pi = info.get("pageInfo", {})
+        lines = [f"页面 '{pageName}' 存在。"]
+        if pi:
+            lines.append(f"页面ID: {pi.get('pageid')}")
+            lines.append(f"长度: {pi.get('length')} 字节")
+            lines.append(f"最后修改: {pi.get('touched')}")
+        if info.get("redirected"):
+            actualTitle = pi.get("title", pageName)
+            lines.append(f"重定向到: {actualTitle}")
+        return "\n".join(lines)
+    else:
+        return f"页面 '{pageName}' 不存在。"
+
+
+@mcp.tool()
+async def check_health() -> str:
+    """检查 Wiki API 服务健康状态。"""
+    try:
+        async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+            resp = await client.get(f"{API_BASE}/health")
+            data = resp.json()
+    except Exception as e:
+        return f"API 服务不可用: {e}"
+
+    if not data.get("status"):
+        return f"API 返回异常: {data}"
+
+    mem = data.get("memory", {})
+    svc = data.get("service", {})
+    lines = [
+        f"状态: {data.get('status', 'unknown')}",
+        f"运行时间: {data.get('uptime', {}).get('human', 'N/A')}",
+        f"环境: {svc.get('environment', 'N/A')}",
+        f"内存: {mem.get('used', '?')} / {mem.get('total', '?')} (系统 {mem.get('system', '?')})",
+    ]
+    return "\n".join(lines)
+
+
+@mcp.tool()
+async def list_namespaces() -> str:
+    """获取 Minecraft Wiki 的命名空间映射表。
+
+    返回所有可用命名空间的数字 ID 和对应名称。
+    结合 search_wiki 的 namespaces 参数使用。"""
+    try:
+        async with httpx.AsyncClient(timeout=10, trust_env=False) as client:
+            resp = await client.get(f"{API_BASE}/api/search/namespaces")
+            data = resp.json()
+    except Exception as e:
+        return f"获取命名空间失败: {e}"
+
+    if not data.get("success"):
+        return "获取命名空间失败"
+
+    ns = data["data"]["namespaces"]
+    lines = ["命名空间映射表：\n"]
+    for k, v in ns.items():
+        lines.append(f"  {k} → {v}")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

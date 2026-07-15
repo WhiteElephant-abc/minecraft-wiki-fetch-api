@@ -43,10 +43,9 @@ class SearchController {
             });
 
             // 执行搜索
-            const searchResult = await this.searchService.search(keyword, {
-                limit,
-                namespaces: namespaces ? namespaces.split(',') : undefined
-            });
+            const searchOptions = { limit };
+            if (namespaces) searchOptions.namespaces = namespaces.split(',');
+            const searchResult = await this.searchService.search(keyword, searchOptions);
 
             const duration = Date.now() - startTime;
 

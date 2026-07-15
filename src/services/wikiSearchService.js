@@ -24,7 +24,7 @@ class WikiSearchService {
         // 搜索配置
         this.defaultOptions = {
             limit: 10,
-            namespaces: ['0'], // 默认只搜索主命名空间
+            namespaces: this.urlBuilder.getDefaultNamespaces(),
             profile: 'advanced',
             fulltext: true,
             ...options.searchDefaults
@@ -90,7 +90,7 @@ class WikiSearchService {
             }
 
             // 解析搜索结果
-            const searchResults = this.parser.parseSearchResults(response.data, normalizedKeyword);
+            const searchResults = await this.parser.parseSearchResults(response.data, normalizedKeyword);
             
             if (!searchResults.success) {
                 throw new Error(`搜索结果解析失败: ${searchResults.error?.message || '未知错误'}`);
@@ -169,7 +169,7 @@ class WikiSearchService {
             }
 
             // 尝试从搜索页面提取建议
-            const searchUrl = this.urlBuilder.buildSearchUrl(keyword, options);
+            const searchUrl = this.urlBuilder.buildSearchUrl(keyword, { ...options, limit: 5 });
             const response = await this.httpClient.get(searchUrl);
             const suggestions = this.parser.extractSuggestions(response.data);
 

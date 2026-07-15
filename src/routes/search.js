@@ -55,6 +55,19 @@ router.patch('/', (req, res, next) => {
     next(new MethodNotAllowedError(req.method, ['GET']));
 });
 
+const { fetchNamespaces } = require('../utils/namespaceCache');
+
+/**
+ * GET /api/search/namespaces
+ * 获取命名空间映射表（数字ID → 名称），数据来源为 Minecraft Wiki 实时配置
+ */
+router.get('/namespaces',
+    asyncHandler(async (req, res) => {
+        const namespaces = await fetchNamespaces();
+        res.json({ success: true, data: { namespaces } });
+    })
+);
+
 /**
  * GET /api/search/stats
  * 获取搜索服务统计信息

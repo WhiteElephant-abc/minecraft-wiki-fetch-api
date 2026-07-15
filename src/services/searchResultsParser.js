@@ -16,7 +16,7 @@ class SearchResultsParser {
      * @param {string} keyword - Original search keyword for context
      * @returns {Object} Parsed search results with metadata
      */
-    parseSearchResults(html, keyword = '') {
+    async parseSearchResults(html, keyword = '') {
         if (!html || typeof html !== 'string') {
             throw new Error('HTML content must be a non-empty string');
         }
@@ -38,7 +38,7 @@ class SearchResultsParser {
 
         try {
             // Extract search results
-            result.data.results = this._extractSearchResults($);
+            result.data.results = await this._extractSearchResults($);
             
             // Extract pagination and count information
             const paginationInfo = this._extractPaginationInfo($);
@@ -65,37 +65,30 @@ class SearchResultsParser {
      * @param {CheerioAPI} $ - Cheerio instance
      * @returns {Array} Array of search result objects
      */
-    _extractSearchResults($) {
+    async _extractSearchResults($) {
         const results = [];
-        
-        // MC Wiki search results are in ul.mw-search-results > li.mw-search-result
-        const searchResults = $('.mw-search-results .mw-search-result');
-        
-        searchResults.each((index, element) => {
+
+        const searchResults = $('.mw-search-results .mw-search-result').toArray();
+
+        for (let index = 0; index < searchResults.length; index++) {
             try {
-                const $result = $(element);
-                
-                // Extract title and URL from the main link
+                const $result = $(searchResults[index]);
+
                 const titleLink = $result.find('.mw-search-result-heading a').first();
                 const title = titleLink.text().trim();
                 const relativeUrl = titleLink.attr('href');
                 const url = relativeUrl ? this._normalizeUrl(relativeUrl) : '';
 
-                // Extract snippet/description
                 const snippetElement = $result.find('.searchresult');
                 let snippet = '';
                 if (snippetElement.length > 0) {
-                    // Remove HTML tags and clean up text
                     snippet = snippetElement.text().trim().replace(/\s+/g, ' ');
                 }
 
-                // Extract namespace information from CSS class
-                const namespace = this._extractNamespaceFromElement($result, title, url);
+                const namespace = await this._extractNamespaceFromElement($result, title, url);
 
-                // Extract additional metadata
                 const metadata = this._extractResultMetadata($result);
 
-                // Only add if we have at least a title
                 if (title) {
                     results.push({
                         title,
@@ -106,10 +99,9 @@ class SearchResultsParser {
                     });
                 }
             } catch (error) {
-                // Log individual result parsing errors but continue
                 console.warn(`Failed to parse search result at index ${index}:`, error.message);
             }
-        });
+        }
 
         return results;
     }
@@ -155,14 +147,14 @@ class SearchResultsParser {
      * @param {string} url - Result URL
      * @returns {string} Namespace name
      */
-    _extractNamespaceFromElement($result, title, url) {
+    async _extractNamespaceFromElement($result, title, url) {
         try {
             // Check CSS class for namespace info (e.g., mw-search-result-ns-0)
             const classes = $result.attr('class') || '';
             const namespaceMatch = classes.match(/mw-search-result-ns-(\d+)/);
             if (namespaceMatch) {
                 const nsId = namespaceMatch[1];
-                return this._mapNamespaceIdToName(nsId);
+                return await this._mapNamespaceIdToName(nsId);
             }
 
             // Try to determine namespace from URL pattern
@@ -191,29 +183,10 @@ class SearchResultsParser {
      * @param {string} nsId - Namespace ID
      * @returns {string} Chinese namespace name
      */
-    _mapNamespaceIdToName(nsId) {
-        const namespaceMap = {
-            '0': '主要',
-            '1': '讨论',
-            '2': '用户',
-            '3': '用户讨论',
-            '4': '项目',
-            '5': '项目讨论',
-            '6': '文件',
-            '7': '文件讨论',
-            '8': 'MediaWiki',
-            '9': 'MediaWiki讨论',
-            '10': '模板',
-            '11': '模板讨论',
-            '12': '帮助',
-            '13': '帮助讨论',
-            '14': '分类',
-            '15': '分类讨论',
-            '828': '模块',
-            '829': '模块讨论'
-        };
-
-        return namespaceMap[nsId] || '主要';
+    async _mapNamespaceIdToName(nsId) {
+        const { fetchNamespaces } = require('../utils/namespaceCache');
+        const ns = await fetchNamespaces();
+        return ns[nsId] || 'Unknown';
     }
 
     /**
@@ -223,35 +196,6 @@ class SearchResultsParser {
      * @param {string} url - Result URL
      * @returns {string} Namespace name
      */
-    _extractNamespace($result, title, url) {
-        try {
-            // Look for namespace indicator in the result
-            const namespaceElement = $result.find('.mw-search-result-ns');
-            if (namespaceElement.length > 0) {
-                return namespaceElement.text().trim();
-            }
-
-            // Try to determine namespace from URL pattern
-            if (url) {
-                const urlMatch = url.match(/\/w\/([^:]+):/);
-                if (urlMatch) {
-                    return this._mapNamespaceFromPrefix(urlMatch[1]);
-                }
-            }
-
-            // Try to determine from title prefix
-            if (title.includes(':')) {
-                const titlePrefix = title.split(':')[0];
-                return this._mapNamespaceFromPrefix(titlePrefix);
-            }
-
-            // Default to main namespace
-            return '主要';
-        } catch (error) {
-            return '主要';
-        }
-    }
-
     /**
      * Extract additional metadata from search result
      * @param {Cheerio} $result - Cheerio element for the result
