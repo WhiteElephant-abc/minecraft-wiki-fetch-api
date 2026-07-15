@@ -5,6 +5,14 @@
 
 const config = require('../config');
 const { AuthenticationError } = require('../utils/errors');
+const crypto = require('crypto');
+
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 /**
  * 验证 API Key
@@ -13,18 +21,16 @@ const { AuthenticationError } = require('../utils/errors');
  */
 function isValidApiKey(providedKey) {
   if (!providedKey) return false;
-  
-  // 支持多个 API Key（从 apiKeys 数组中验证）
+
   const validKeys = config.security.apiKeys;
   if (validKeys && validKeys.length > 0) {
-    return validKeys.includes(providedKey);
+    return validKeys.some(k => safeEqual(providedKey, k));
   }
-  
-  // 向后兼容单个 apiKey
+
   if (config.security.apiKey) {
-    return providedKey === config.security.apiKey;
+    return safeEqual(providedKey, config.security.apiKey);
   }
-  
+
   return false;
 }
 
@@ -32,24 +38,18 @@ function isValidApiKey(providedKey) {
  * 从请求中提取 API Key
  * 支持两种方式：
  * 1. 请求头 X-API-Key
- * 2. 查询参数 api_key
- * 
+ * 2. 请求头 Authorization: Bearer <key>
+ *
  * @param {object} req - Express 请求对象
  * @returns {string|null} API Key 或 null
  */
 function extractApiKey(req) {
-  // 优先从请求头获取
   const headerKey = req.headers['x-api-key'];
-  if (headerKey) {
-    return headerKey;
+  if (headerKey) return headerKey;
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7);
   }
-  
-  // 从查询参数获取
-  const queryKey = req.query.api_key;
-  if (queryKey) {
-    return queryKey;
-  }
-  
   return null;
 }
 
@@ -94,7 +94,7 @@ function requireAuth(req, res, next) {
   
   const error = new AuthenticationError('此端点需要有效的 API Key');
   error.details = {
-    hint: '请在请求头中添加 X-API-Key 或在查询参数中添加 api_key',
+    hint: '请在请求头中添加 X-API-Key 或 Authorization: Bearer <key>',
     endpoint: req.originalUrl,
   };
   
@@ -128,7 +128,7 @@ function conditionalAuth(feature) {
     if (requiresAuth && !req.authenticated) {
       const error = new AuthenticationError(`此功能需要有效的 API Key`);
       error.details = {
-        hint: '请在请求头中添加 X-API-Key 或在查询参数中添加 api_key',
+        hint: '请在请求头中添加 X-API-Key 或 Authorization: Bearer <key>',
         feature,
       };
       return next(error);
