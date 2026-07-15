@@ -466,8 +466,9 @@ class PageContentParser {
         $('*').each((i, el) => {
             const $el = $(el);
             $el.removeAttr('style');
-            $el.removeAttr('data-*');
-            
+            const dataAttrs = Object.keys(el.attribs || {}).filter(k => k.startsWith('data-'));
+            dataAttrs.forEach(k => $el.removeAttr(k));
+
             // 移除不必要的class属性
             const classList = $el.attr('class');
             if (classList) {
@@ -492,11 +493,12 @@ class PageContentParser {
         $('p:empty, div:empty, span:empty').remove();
         
         // 合并连续的相同标签
-        $('p + p, br + br').each((i, el) => {
+        const targets = [];
+        $('p + p, br + br').each((i, el) => targets.push(el));
+        targets.forEach((el) => {
             const $el = $(el);
             const $prev = $el.prev();
-            
-            if ($el.prop('tagName') === $prev.prop('tagName')) {
+            if ($el.length && $prev.length && $el.prop('tagName') === $prev.prop('tagName')) {
                 if ($el.prop('tagName') === 'P') {
                     $prev.append(' ' + $el.html());
                     $el.remove();
@@ -578,7 +580,8 @@ class PageContentParser {
         $('.infobox').each((i, el) => {
             const $infobox = $(el);
             const title = $infobox.find('.infobox-title, .fn').first().text().trim();
-            const type = $infobox.attr('class').split(' ').find(cls => cls.includes('infobox')) || 'infobox';
+            const cls = $infobox.attr('class') || '';
+            const type = cls.split(' ').find(c => c.includes('infobox')) || 'infobox';
             
             components.infoboxes.push({
                 title,
