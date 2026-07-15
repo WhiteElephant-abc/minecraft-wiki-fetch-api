@@ -5,6 +5,7 @@
 ## 功能特性
 
 - **Web 控制台**：访问根路径 `/` 即可使用可视化的 API 测试控制台
+- **MCP 服务器**：支持 Model Context Protocol，可直接接入 Claude Desktop 等 AI 工具
 - **API Key 认证**：支持静态 API Key 认证，保护敏感端点
 - **分布式速率限制**：支持 Upstash Redis 分布式限流，区分认证/未认证用户配额
 - Wiki 搜索：`GET /api/search`
@@ -41,7 +42,9 @@ cd minecraft-wiki-fetch-api
 docker compose up -d
 ```
 
-服务默认监听 `http://localhost:3000`。可通过 `.env` 文件或环境变量覆盖配置：
+服务默认监听：
+- `http://localhost:3000` — REST API + Web 控制台
+- `http://localhost:3001/mcp` — MCP 服务器
 
 ```bash
 # 自定义端口
@@ -191,6 +194,48 @@ curl "https://your-api.vercel.app/api/pages?api_key=your-api-key"
 - `GET /health/detailed`
 - `GET /health/ready`
 - `GET /health/live`
+
+## MCP 服务器
+
+MCP（Model Context Protocol）服务器可以让 AI 工具（如 Claude Desktop）直接搜索和获取 Wiki 内容。
+
+### Docker 部署（已包含在 compose 中）
+
+```bash
+docker compose up -d
+# API: http://localhost:3000
+# MCP: http://localhost:3001/mcp
+```
+
+### 本地运行
+
+```bash
+cd mcp-server
+python3 -m venv .venv && source .venv/bin/activate
+pip install mcp httpx
+python server.py
+```
+
+### 接入 AI 工具
+
+MCP 服务器使用 **Streamable HTTP** 传输协议。任何支持 MCP 的客户端通过以下地址接入：
+
+```
+http://localhost:3001/mcp
+```
+
+示例（Claude Code）：
+
+```bash
+claude mcp add --transport http zh-minecraft-wiki http://localhost:3001/mcp
+```
+
+### 可用工具
+
+| 工具 | 用途 |
+|---|---|
+| `search_wiki(q, limit)` | 搜索 Wiki 页面，返回标题、URL、摘要 |
+| `get_page(pageName, format)` | 获取页面内容，`format` 可选 `wikitext`（默认，最完整）、`markdown`、`html` |
 
 ## 本地开发
 
