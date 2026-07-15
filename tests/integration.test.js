@@ -17,7 +17,7 @@ describe('Integration Tests', () => {
 
     test('should use configuration values in logger', () => {
       expect(config.logging.level).toBeDefined();
-      expect(config.logging.enableConsole).toBeDefined();
+      expect(config.logging.console).toBeDefined();
     });
   });
 

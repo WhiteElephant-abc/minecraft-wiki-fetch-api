@@ -23,10 +23,9 @@ describe('App Basic Tests', () => {
         .get('/health')
         .expect(200);
 
-      expect(response.body).toHaveProperty('success', true);
-      expect(response.body.data).toHaveProperty('status', 'healthy');
-      expect(response.body.data).toHaveProperty('timestamp');
-      expect(response.body.data).toHaveProperty('uptime');
+      expect(response.body).toHaveProperty('status', 'healthy');
+      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toHaveProperty('uptime');
     });
   });
 
@@ -36,10 +35,12 @@ describe('App Basic Tests', () => {
         .get('/api')
         .expect(200);
 
-      expect(response.body).toHaveProperty('success', true);
-      expect(response.body.data).toHaveProperty('message', 'Minecraft Wiki API');
-      expect(response.body.data).toHaveProperty('endpoints');
-      expect(Array.isArray(response.body.data.endpoints)).toBe(true);
+      expect(response.body).toHaveProperty('name', 'Minecraft Wiki API');
+      expect(response.body).toHaveProperty('version');
+      expect(response.body).toHaveProperty('endpoints');
+      expect(typeof response.body.endpoints).toBe('object');
+      expect(response.body.endpoints.search).toContain('/api/search');
+      expect(response.body.endpoints.pages).toContain('/api/page');
     });
   });
 

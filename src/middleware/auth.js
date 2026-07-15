@@ -6,7 +6,6 @@
 const crypto = require('crypto');
 const config = require('../config');
 const { AuthenticationError } = require('../utils/errors');
-const crypto = require('crypto');
 
 function safeEqual(a, b) {
   const bufA = Buffer.from(String(a));

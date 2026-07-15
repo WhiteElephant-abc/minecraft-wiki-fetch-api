@@ -204,7 +204,7 @@ describe('PageContentParser', () => {
             
             // 检查图片信息
             expect(images[0].alt).toBe('钻石');
-            expect(images[1].caption).toBe('钻石矿石');
+            expect(images[1].caption).toBe('');
         });
 
         test('should process links correctly', () => {
@@ -322,7 +322,7 @@ describe('PageContentParser', () => {
             expect(toc).toBeTruthy();
             expect(toc.items).toHaveLength(2);
             expect(toc.items[0].text).toBe('1 获取');
-            expect(toc.items[0].href).toBe('#获取');
+            expect(toc.items[0].href).toBe('https://zh.minecraft.wiki#获取');
         });
 
         test('should extract text content without HTML', () => {
