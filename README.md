@@ -227,6 +227,10 @@ http://localhost:3001/mcp
 示例（Claude Code）：
 
 ```bash
+# 全局生效，所有项目可用
+claude mcp add --scope user --transport http zh-minecraft-wiki http://localhost:3001/mcp
+
+# 仅当前项目生效
 claude mcp add --transport http zh-minecraft-wiki http://localhost:3001/mcp
 ```
 
