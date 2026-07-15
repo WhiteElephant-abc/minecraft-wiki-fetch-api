@@ -56,3 +56,4 @@ pids
 # Frontend build output
 frontend/dist/
 dist/
+.worktrees/
