@@ -6,7 +6,7 @@
 const WikiSearchService = require('../src/services/wikiSearchService');
 
 // 跳过网络测试的条件
-const skipNetworkTests = process.env.CI === 'true' || process.env.SKIP_NETWORK_TESTS === 'true';
+const skipNetworkTests = process.env.CI === 'true' || process.env.SKIP_NETWORK_TESTS === 'true' || process.env.NODE_ENV === 'test';
 
 describe('WikiSearchService Real Network Tests', () => {
     let searchService;

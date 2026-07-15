@@ -69,7 +69,7 @@
 
 ## 认证与限流
 
-- `API_KEY` 通过请求头 `X-API-Key` 或查询参数 `api_key` 传递
+- `API_KEY` 通过请求头 `X-API-Key` 或 `Authorization: Bearer <key>` 传递
 - 受保护端点：
   - `POST /api/pages`：批量获取（由 `REQUIRE_AUTH_FOR_BATCH` 控制，默认需认证）
   - `DELETE /api/page/:pageName/cache`：清除缓存（由 `REQUIRE_AUTH_FOR_CACHE_CLEAR` 控制，默认需认证）

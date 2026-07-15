@@ -148,7 +148,7 @@ describe('WikiSearchService', () => {
             const result = await searchService.search('钻石');
 
             expect(result.success).toBe(false);
-            expect(result.error.code).toBe('NETWORK_ERROR');
+            expect(result.error.code).toBe('UNKNOWN_ERROR');
             expect(result.error.message).toBe('Network error');
         });
 

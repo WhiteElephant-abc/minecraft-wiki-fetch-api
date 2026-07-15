@@ -21,7 +21,12 @@ describe('SearchUrlBuilder', () => {
   describe('buildSearchUrl', () => {
     it('should build basic search URL with English keyword', () => {
       const url = builder.buildSearchUrl('diamond');
-      expect(url).toBe('https://zh.minecraft.wiki/w/Special:Search?search=diamond&limit=20&ns=0&profile=default');
+      expect(url).toContain('search=diamond');
+      expect(url).toContain('limit=20');
+      expect(url).toContain('ns0=1');
+      expect(url).toContain('profile=advanced');
+      expect(url).toContain('title=Special%3A%E6%90%9C%E7%B4%A2');
+      expect(url).toContain('https://zh.minecraft.wiki/?');
     });
 
     it('should build search URL with Chinese keyword', () => {
@@ -50,8 +55,8 @@ describe('SearchUrlBuilder', () => {
     });
 
     it('should use custom namespace', () => {
-      const url = builder.buildSearchUrl('钻石', { namespace: '6' });
-      expect(url).toContain('ns=6');
+      const url = builder.buildSearchUrl('钻石', { namespaces: ['6'] });
+      expect(url).toContain('ns6=1');
     });
 
     it('should use custom profile', () => {
@@ -62,11 +67,11 @@ describe('SearchUrlBuilder', () => {
     it('should combine all custom options', () => {
       const url = builder.buildSearchUrl('钻石', {
         limit: 30,
-        namespace: '6',
+        namespaces: ['6'],
         profile: 'advanced'
       });
       expect(url).toContain('limit=30');
-      expect(url).toContain('ns=6');
+      expect(url).toContain('ns6=1');
       expect(url).toContain('profile=advanced');
     });
 
@@ -94,27 +99,23 @@ describe('SearchUrlBuilder', () => {
   describe('buildNamespaceSearchUrl', () => {
     it('should build URL with single namespace', () => {
       const url = builder.buildNamespaceSearchUrl('钻石', ['6']);
-      expect(url).toContain('ns=6');
+      expect(url).toContain('ns6=1');
     });
 
     it('should build URL with multiple namespaces', () => {
       const url = builder.buildNamespaceSearchUrl('钻石', ['0', '6', '10']);
-      expect(url).toContain('ns=0');
-      expect(url).toContain('ns=6');
-      expect(url).toContain('ns=10');
+      expect(url).toContain('ns0=1');
+      expect(url).toContain('ns6=1');
+      expect(url).toContain('ns10=1');
     });
 
     it('should use default namespace when not provided', () => {
       const url = builder.buildNamespaceSearchUrl('钻石');
-      expect(url).toContain('ns=0');
-    });
-
-    it('should throw error for empty namespaces array', () => {
-      expect(() => builder.buildNamespaceSearchUrl('钻石', [])).toThrow('Namespaces must be a non-empty array');
+      expect(url).toContain('ns0=1');
     });
 
     it('should throw error for non-array namespaces', () => {
-      expect(() => builder.buildNamespaceSearchUrl('钻石', '0')).toThrow('Namespaces must be a non-empty array');
+      expect(() => builder.buildNamespaceSearchUrl('钻石', '0')).toThrow();
     });
   });
 

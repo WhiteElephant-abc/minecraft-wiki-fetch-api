@@ -35,18 +35,20 @@ describe('SearchResultsParser', () => {
             const html = `
                 <html>
                 <body>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/钻石" title="钻石">钻石</a>
-                        </div>
-                        <div class="searchresult">钻石是一种稀有的矿物，可以用来制作工具和装备。</div>
-                    </div>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/钻石剑" title="钻石剑">钻石剑</a>
-                        </div>
-                        <div class="searchresult">钻石剑是游戏中最强的剑之一。</div>
-                    </div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result mw-search-result-ns-0">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/钻石" title="钻石">钻石</a>
+                            </div>
+                            <div class="searchresult">钻石是一种稀有的矿物，可以用来制作工具和装备。</div>
+                        </li>
+                        <li class="mw-search-result mw-search-result-ns-0">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/钻石剑" title="钻石剑">钻石剑</a>
+                            </div>
+                            <div class="searchresult">钻石剑是游戏中最强的剑之一。</div>
+                        </li>
+                    </ul>
                 </body>
                 </html>
             `;
@@ -72,19 +74,20 @@ describe('SearchResultsParser', () => {
             const html = `
                 <html>
                 <body>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/Template:物品" title="Template:物品">Template:物品</a>
-                        </div>
-                        <div class="searchresult">物品模板</div>
-                        <div class="mw-search-result-ns">模板</div>
-                    </div>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/Category:物品" title="Category:物品">Category:物品</a>
-                        </div>
-                        <div class="searchresult">物品分类</div>
-                    </div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result mw-search-result-ns-10">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/Template:物品" title="Template:物品">Template:物品</a>
+                            </div>
+                            <div class="searchresult">物品模板</div>
+                        </li>
+                        <li class="mw-search-result mw-search-result-ns-14">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/Category:物品" title="Category:物品">Category:物品</a>
+                            </div>
+                            <div class="searchresult">物品分类</div>
+                        </li>
+                    </ul>
                 </body>
                 </html>
             `;
@@ -102,13 +105,15 @@ describe('SearchResultsParser', () => {
             const html = `
                 <html>
                 <body>
-                    <div class="results-info">找到 150 个结果</div>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/测试" title="测试">测试</a>
-                        </div>
-                        <div class="searchresult">测试内容</div>
-                    </div>
+                    <div class="results-info">共 150 条</div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result mw-search-result-ns-0">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/测试" title="测试">测试</a>
+                            </div>
+                            <div class="searchresult">测试内容</div>
+                        </li>
+                    </ul>
                     <div class="mw-search-pager-bottom">
                         <a class="mw-nextlink" href="/search?q=test&page=2">下一页</a>
                     </div>
@@ -137,14 +142,18 @@ describe('SearchResultsParser', () => {
             const html = `
                 <html>
                 <body>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/File:Diamond.png" title="File:Diamond.png">File:Diamond.png</a>
-                        </div>
-                        <div class="searchresult">钻石图片文件</div>
-                        <div class="filesize">50 KB</div>
-                        <div class="mw-search-result-date">2024-01-15</div>
-                    </div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result mw-search-result-ns-6">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/File:Diamond.png" title="File:Diamond.png">File:Diamond.png</a>
+                            </div>
+                            <div class="searchresult">钻石图片文件</div>
+                            <div class="mw-search-result-data">
+                                <div class="filesize">50 KB</div>
+                                <div class="mw-search-result-date">2024-01-15</div>
+                            </div>
+                        </li>
+                    </ul>
                 </body>
                 </html>
             `;
@@ -184,11 +193,13 @@ describe('SearchResultsParser', () => {
             const withResultsHtml = `
                 <html>
                 <body>
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/test">Test</a>
-                        </div>
-                    </div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/test">Test</a>
+                            </div>
+                        </li>
+                    </ul>
                 </body>
                 </html>
             `;
@@ -288,31 +299,34 @@ describe('SearchResultsParser', () => {
             const complexHtml = `
                 <html>
                 <body>
-                    <div class="results-info">找到 25 个结果</div>
+                    <div class="results-info">共 25 条</div>
                     
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/钻石" title="钻石">钻石</a>
-                        </div>
-                        <div class="searchresult">钻石是一种稀有的矿物，可以用来制作最强的工具和装备。</div>
-                    </div>
-                    
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/Template:钻石工具" title="Template:钻石工具">Template:钻石工具</a>
-                        </div>
-                        <div class="searchresult">钻石工具模板</div>
-                        <div class="mw-search-result-ns">模板</div>
-                    </div>
-                    
-                    <div class="mw-search-result-data">
-                        <div class="mw-search-result-heading">
-                            <a href="/w/File:Diamond_Ore.png" title="File:Diamond_Ore.png">File:Diamond_Ore.png</a>
-                        </div>
-                        <div class="searchresult">钻石矿石贴图文件</div>
-                        <div class="filesize">128 KB</div>
-                        <div class="mw-search-result-date">2024-02-01</div>
-                    </div>
+                    <ul class="mw-search-results">
+                        <li class="mw-search-result mw-search-result-ns-0">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/钻石" title="钻石">钻石</a>
+                            </div>
+                            <div class="searchresult">钻石是一种稀有的矿物，可以用来制作最强的工具和装备。</div>
+                        </li>
+                        
+                        <li class="mw-search-result mw-search-result-ns-10">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/Template:钻石工具" title="Template:钻石工具">Template:钻石工具</a>
+                            </div>
+                            <div class="searchresult">钻石工具模板</div>
+                        </li>
+                        
+                        <li class="mw-search-result mw-search-result-ns-6">
+                            <div class="mw-search-result-heading">
+                                <a href="/w/File:Diamond_Ore.png" title="File:Diamond_Ore.png">File:Diamond_Ore.png</a>
+                            </div>
+                            <div class="searchresult">钻石矿石贴图文件</div>
+                            <div class="mw-search-result-data">
+                                <div class="filesize">128 KB</div>
+                                <div class="mw-search-result-date">2024-02-01</div>
+                            </div>
+                        </li>
+                    </ul>
                     
                     <div class="mw-search-pager-bottom">
                         <span class="mw-search-pager-current">1</span>
