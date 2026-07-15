@@ -7,6 +7,16 @@ const { APIError, ErrorFactory } = require('../utils/errors');
 const { logger } = require('../utils/logger');
 const config = require('../config');
 
+const SENSITIVE_HEADERS = ['authorization', 'x-api-key', 'cookie'];
+
+function redactHeaders(headers) {
+    const out = {};
+    for (const [k, v] of Object.entries(headers || {})) {
+        out[k] = SENSITIVE_HEADERS.includes(k.toLowerCase()) ? '[REDACTED]' : v;
+    }
+    return out;
+}
+
 /**
  * 异步错误包装器
  * 自动捕获异步路由处理函数中的错误
@@ -66,9 +76,10 @@ function errorHandler(err, req, res, next) {
             url: req.originalUrl,
             ip: req.ip,
             userAgent: req.get('User-Agent'),
-            body: req.body,
+            body: req.body ? '[REDACTED]' : undefined,
             params: req.params,
-            query: req.query
+            query: req.query,
+            headers: redactHeaders(req.headers)
         },
         timestamp: new Date().toISOString()
     };
