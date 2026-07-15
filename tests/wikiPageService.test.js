@@ -397,6 +397,23 @@ describe('WikiPageService Integration Tests', () => {
             stats = service.getCacheStats();
             expect(stats.size).toBe(0);
         });
+
+        test('should return deep clone from cache to prevent mutation', async () => {
+            mockHttpClient.get
+                .mockResolvedValueOnce(mockApiExistsResponse)
+                .mockResolvedValueOnce({ data: mockWikiPageHtml });
+
+            const result1 = await service.getPage('钻石', { format: 'html' });
+            expect(result1.success).toBe(true);
+
+            result1.data.title = 'MUTATED';
+            result1.data.content.html = 'MUTATED';
+
+            const result2 = await service.getPage('钻石', { format: 'html' });
+            expect(result2.success).toBe(true);
+            expect(result2.data.title).toBe('钻石');
+            expect(result2.data.content.html).not.toBe('MUTATED');
+        });
     });
 
     describe('configuration and utilities', () => {

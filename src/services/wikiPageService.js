@@ -10,6 +10,11 @@ const { HttpClient } = require('../utils/httpClient');
 const config = require('../config');
 const { logger } = require('../utils/logger');
 
+function cloneSafe(obj) {
+    try { return structuredClone(obj); }
+    catch { try { return JSON.parse(JSON.stringify(obj)); } catch { return obj; } }
+}
+
 class WikiPageService {
     constructor(options = {}) {
         // 服务配置
@@ -588,7 +593,7 @@ class WikiPageService {
         // 更新访问时间
         this.cacheAccessTimes.set(cacheKey, Date.now());
         
-        return cachedResult;
+        return cloneSafe(cachedResult);
     }
 
     /**
@@ -605,7 +610,7 @@ class WikiPageService {
             this._evictOldestEntry();
         }
 
-        this.cache.set(cacheKey, result);
+        this.cache.set(cacheKey, cloneSafe(result));
         this.cacheTimestamps.set(cacheKey, Date.now());
         this.cacheAccessTimes.set(cacheKey, Date.now());
     }
