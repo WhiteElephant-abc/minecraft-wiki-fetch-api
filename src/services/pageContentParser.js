@@ -34,10 +34,13 @@ class PageContentParser {
                 '.mw-selflink',             // 自链接
                 '.searchaux',               // 搜索辅助元素
                 '.sprite-file',             // 精灵文件
-                '.pixel-image',             // 像素图片容器
+                // .pixel-image 在历史表格等 wikitable 上被用作样式修饰，直接 remove 会删掉整张表格。
+                // 用 :not(.wikitable) 排除表格，只移除非表格元素上的 pixel-image
+                '.pixel-image:not(.wikitable)', // 像素图片容器（排除表格）
                 'link[rel="mw-deduplicated-inline-style"]', // 重复样式链接
                 '.cite-bracket',            // 引用括号
-                '.nowrap',                  // 不换行容器
+                // 注意：.nowrap 不能直接 remove()，内容包裹在里面的命令名等关键文本也会被删掉，
+                // 改为在 _simplifyComplexTags 中用 unwrap 处理。见 _cleanContent 后的 _simplifyComplexTags 调用。
                 '.loot-chest-container .wikitable tbody tr:first-child', // 表格标题行（简化战利品表格）
                 '.mw-parser-output > .mw-empty-elt', // 空的解析器输出元素
                 '.mw-references-wrap',      // 参考文献包装器
@@ -265,8 +268,8 @@ class PageContentParser {
             $content.find(selector).remove();
         });
 
-        // 简化清理逻辑，只移除明显的空元素
-        $content.find('p:empty, div:empty, span:empty').remove();
+        // 简化清理逻辑，只移除明显的空元素（保留 .minetip，title 中的文字仍需保留）
+        $content.find('p:empty, div:empty, span:empty').not('.minetip').remove();
 
         // 清理连续的空白
         const cleaned = $content.html();
@@ -426,6 +429,19 @@ class PageContentParser {
                 classList.includes('sprite-') ||
                 classList.includes('pixel-')) {
                 $span.replaceWith($span.html());
+            }
+        });
+
+        // 处理 .minetip 工具提示：内部 sprite/file 图标被移除后，元素可能变空，
+        // 此时用 title 属性中的文字恢复内容（常用于表格表头图标列）
+        $('.minetip').each((i, el) => {
+            const $el = $(el);
+            const text = $el.text().trim();
+            const title = $el.attr('title');
+            if (!text) {
+                if (title) {
+                    $el.text(title);
+                }
             }
         });
 
