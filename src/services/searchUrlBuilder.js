@@ -113,14 +113,30 @@ class SearchUrlBuilder {
             '13': 'Help_talk',     // 帮助讨论
             '14': 'Category',      // 分类
             '15': 'Category_talk', // 分类讨论
-            '9994': 'Module',      // 模块
-            '9996': 'Gadget',      // 小工具
-            '9998': 'Gadget_definition', // 小工具定义
-            '10000': 'Data',       // 数据
-            '10002': 'Data_talk',  // 数据讨论
-            '10004': 'Widget',     // 小部件
-            '10006': 'Widget_talk', // 小部件讨论
-            '10010': 'Config'      // 配置
+            '828': 'Module',       // 模块
+            '829': 'Module_talk',  // 模块讨论
+            '9994': 'Legends_tutorial', // Legends教程
+            '9995': 'Legends_tutorial_talk', // Legends教程讨论
+            '9996': 'Dungeons_tutorial', // Dungeons教程
+            '9997': 'Dungeons_tutorial_talk', // Dungeons教程讨论
+            '9998': 'Tutorial',    // 教程
+            '9999': 'Tutorial_talk', // 教程讨论
+            '10000': 'Dungeons',    // 我的世界：地下城
+            '10001': 'Dungeons_talk', // 地下城讨论
+            '10002': 'Earth',      // 我的世界：地球
+            '10003': 'Earth_talk',  // 地球讨论
+            '10004': 'Story_Mode',  // 我的世界：故事模式
+            '10005': 'Story_Mode_talk', // 故事模式讨论
+            '10006': 'Legends',     // 我的世界：传奇
+            '10007': 'Legends_talk', // 传奇讨论
+            '10008': 'Forum',       // 论坛
+            '10009': 'Forum_talk',  // 论坛讨论
+            '10010': 'China_Edition', // 中国版
+            '10011': 'China_Edition_talk', // 中国版讨论
+            '10012': 'Draft',       // 草稿
+            '10013': 'Draft_talk',  // 草稿讨论
+            '10014': 'Dungeons_II', // 我的世界：地下城II
+            '10015': 'Dungeons_II_talk' // 地下城II讨论
         };
     }
 
