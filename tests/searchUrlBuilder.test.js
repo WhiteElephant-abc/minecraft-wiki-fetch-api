@@ -22,10 +22,9 @@ describe('SearchUrlBuilder', () => {
     it('should build basic search URL with English keyword', () => {
       const url = builder.buildSearchUrl('diamond');
       expect(url).toContain('search=diamond');
-      expect(url).toContain('limit=20');
-      expect(url).toContain('ns0=1');
+      expect(url).toContain('limit=10');
       expect(url).toContain('profile=advanced');
-      expect(url).toContain('title=Special%3A%E6%90%9C%E7%B4%A2');
+      expect(url).toContain('title=Special%3ASearch');
       expect(url).toContain('https://zh.minecraft.wiki/?');
     });
 
@@ -119,20 +118,12 @@ describe('SearchUrlBuilder', () => {
     });
   });
 
-  describe('getNamespaces', () => {
-    it('should return namespace mappings', () => {
-      const namespaces = builder.getNamespaces();
-      expect(namespaces).toHaveProperty('0', 'Main');
-      expect(namespaces).toHaveProperty('6', 'File');
-      expect(namespaces).toHaveProperty('10', 'Template');
-      expect(namespaces).toHaveProperty('14', 'Category');
-    });
-
-    it('should return object with string keys', () => {
-      const namespaces = builder.getNamespaces();
-      Object.keys(namespaces).forEach(key => {
-        expect(typeof key).toBe('string');
-      });
+  describe('getDefaultNamespaces', () => {
+    it('should return namespace ID array for comprehensive search', () => {
+      const namespaces = builder.getDefaultNamespaces();
+      expect(Array.isArray(namespaces)).toBe(true);
+      expect(namespaces).toContain('0');
+      expect(namespaces).toContain('9998');
     });
   });
 

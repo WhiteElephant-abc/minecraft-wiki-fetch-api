@@ -13,8 +13,8 @@ class SearchUrlBuilder {
      * Build search URL with proper encoding for Chinese keywords (matches MC Wiki format)
      * @param {string} keyword - Search keyword
      * @param {Object} options - Search options
-     * @param {number} options.limit - Maximum number of results (default: 20)
-     * @param {Array<string>} options.namespaces - Array of namespace IDs (default: ['0'])
+     * @param {number} options.limit - Maximum number of results (default: 10)
+     * @param {Array<string>} options.namespaces - Array of namespace IDs (default: [])
      * @param {string} options.profile - Search profile (default: 'advanced')
      * @param {boolean} options.fulltext - Enable fulltext search (default: true)
      * @param {boolean} options.includeSearchToken - Include searchToken parameter (default: false)
@@ -26,8 +26,8 @@ class SearchUrlBuilder {
         }
 
         const {
-            limit = 20,
-            namespaces = ['0'],
+            limit = 10,
+            namespaces = [],
             profile = 'advanced',
             fulltext = true,
             includeSearchToken = false
@@ -40,7 +40,7 @@ class SearchUrlBuilder {
 
         const searchParams = new URLSearchParams({
             search: keyword.trim(),
-            title: 'Special:搜索',
+            title: 'Special:Search',
             profile: profile,
             fulltext: fulltext ? '1' : '0',
             limit: limit.toString()
@@ -92,60 +92,13 @@ class SearchUrlBuilder {
     }
 
     /**
-     * Get available namespace mappings for MC Wiki
-     * @returns {Object} Namespace ID to name mappings
-     */
-    getNamespaces() {
-        return {
-            '0': 'Main',           // 主要
-            '1': 'Talk',           // 讨论
-            '2': 'User',           // 用户
-            '3': 'User_talk',      // 用户讨论
-            '4': 'Project',        // 项目
-            '5': 'Project_talk',   // 项目讨论
-            '6': 'File',           // 文件
-            '7': 'File_talk',      // 文件讨论
-            '8': 'MediaWiki',      // MediaWiki
-            '9': 'MediaWiki_talk', // MediaWiki讨论
-            '10': 'Template',      // 模板
-            '11': 'Template_talk', // 模板讨论
-            '12': 'Help',          // 帮助
-            '13': 'Help_talk',     // 帮助讨论
-            '14': 'Category',      // 分类
-            '15': 'Category_talk', // 分类讨论
-            '828': 'Module',       // 模块
-            '829': 'Module_talk',  // 模块讨论
-            '9994': 'Legends_tutorial', // Legends教程
-            '9995': 'Legends_tutorial_talk', // Legends教程讨论
-            '9996': 'Dungeons_tutorial', // Dungeons教程
-            '9997': 'Dungeons_tutorial_talk', // Dungeons教程讨论
-            '9998': 'Tutorial',    // 教程
-            '9999': 'Tutorial_talk', // 教程讨论
-            '10000': 'Dungeons',    // 我的世界：地下城
-            '10001': 'Dungeons_talk', // 地下城讨论
-            '10002': 'Earth',      // 我的世界：地球
-            '10003': 'Earth_talk',  // 地球讨论
-            '10004': 'Story_Mode',  // 我的世界：故事模式
-            '10005': 'Story_Mode_talk', // 故事模式讨论
-            '10006': 'Legends',     // 我的世界：传奇
-            '10007': 'Legends_talk', // 传奇讨论
-            '10008': 'Forum',       // 论坛
-            '10009': 'Forum_talk',  // 论坛讨论
-            '10010': 'China_Edition', // 中国版
-            '10011': 'China_Edition_talk', // 中国版讨论
-            '10012': 'Draft',       // 草稿
-            '10013': 'Draft_talk',  // 草稿讨论
-            '10014': 'Dungeons_II', // 我的世界：地下城II
-            '10015': 'Dungeons_II_talk' // 地下城II讨论
-        };
-    }
-
-    /**
-     * Get default MC Wiki namespaces for comprehensive search
-     * @returns {Array<string>} Array of namespace IDs
+     * 从 mcwiki 官方搜索配置提取的默认命名空间。
+     * 来源：Special:Search 页面取消勾选 Main 后显示的默认勾选项。
+     * @returns {Array<string>}
      */
     getDefaultNamespaces() {
-        return ['0', '9994', '9996', '9998', '10000', '10002', '10004', '10006', '10010'];
+        return ['0', '4', '10', '12', '9998', '10014'];
+        //         Main  ^MCWiki^Templ^Help ^Tutorial^Dungeons II
     }
 
     /**

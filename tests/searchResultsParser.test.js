@@ -3,6 +3,13 @@
  * Verifies parsing accuracy for various search result scenarios
  */
 
+jest.mock('../src/utils/namespaceCache', () => ({
+    fetchNamespaces: jest.fn().mockResolvedValue({
+        '0': '主要', '4': '项目', '6': '文件', '10': '模板',
+        '12': '帮助', '14': '分类'
+    })
+}));
+
 const SearchResultsParser = require('../src/services/searchResultsParser');
 
 describe('SearchResultsParser', () => {
@@ -13,15 +20,15 @@ describe('SearchResultsParser', () => {
     });
 
     describe('parseSearchResults', () => {
-        it('should throw error for invalid HTML input', () => {
-            expect(() => parser.parseSearchResults(null)).toThrow('HTML content must be a non-empty string');
-            expect(() => parser.parseSearchResults('')).toThrow('HTML content must be a non-empty string');
-            expect(() => parser.parseSearchResults(123)).toThrow('HTML content must be a non-empty string');
+        it('should throw error for invalid HTML input', async () => {
+            await expect(parser.parseSearchResults(null)).rejects.toThrow('HTML content must be a non-empty string');
+            await expect(parser.parseSearchResults('')).rejects.toThrow('HTML content must be a non-empty string');
+            await expect(parser.parseSearchResults(123)).rejects.toThrow('HTML content must be a non-empty string');
         });
 
-        it('should return empty results for HTML with no search results', () => {
+        it('should return empty results for HTML with no search results', async () => {
             const html = '<html><body><div class="content">No search results</div></body></html>';
-            const result = parser.parseSearchResults(html, 'test');
+            const result = await parser.parseSearchResults(html, 'test');
 
             expect(result.success).toBe(true);
             expect(result.data.results).toEqual([]);
@@ -31,7 +38,7 @@ describe('SearchResultsParser', () => {
             expect(result.timestamp).toBeDefined();
         });
 
-        it('should parse basic search results correctly', () => {
+        it('should parse basic search results correctly', async () => {
             const html = `
                 <html>
                 <body>
@@ -53,7 +60,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(html, '钻石');
+            const result = await parser.parseSearchResults(html, '钻石');
 
             expect(result.success).toBe(true);
             expect(result.data.results).toHaveLength(2);
@@ -70,7 +77,7 @@ describe('SearchResultsParser', () => {
             expect(secondResult.snippet).toBe('钻石剑是游戏中最强的剑之一。');
         });
 
-        it('should handle namespace information correctly', () => {
+        it('should handle namespace information correctly', async () => {
             const html = `
                 <html>
                 <body>
@@ -92,7 +99,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(html, '物品');
+            const result = await parser.parseSearchResults(html, '物品');
 
             expect(result.success).toBe(true);
             expect(result.data.results).toHaveLength(2);
@@ -101,7 +108,7 @@ describe('SearchResultsParser', () => {
             expect(result.data.results[1].namespace).toBe('分类');
         });
 
-        it('should extract pagination information', () => {
+        it('should extract pagination information', async () => {
             const html = `
                 <html>
                 <body>
@@ -121,7 +128,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(html, '测试');
+            const result = await parser.parseSearchResults(html, '测试');
 
             expect(result.success).toBe(true);
             expect(result.data.totalCount).toBe(150);
@@ -129,16 +136,16 @@ describe('SearchResultsParser', () => {
             expect(result.data.currentPage).toBe(1);
         });
 
-        it('should handle parsing errors gracefully', () => {
+        it('should handle parsing errors gracefully', async () => {
             const malformedHtml = '<html><body><div class="mw-search-result-data"><a href="/w/test">Test</a></div>';
-            
+
             // Should not throw, but may return partial results
-            const result = parser.parseSearchResults(malformedHtml, 'test');
+            const result = await parser.parseSearchResults(malformedHtml, 'test');
             expect(result.success).toBe(true);
             expect(Array.isArray(result.data.results)).toBe(true);
         });
 
-        it('should extract additional metadata when available', () => {
+        it('should extract additional metadata when available', async () => {
             const html = `
                 <html>
                 <body>
@@ -158,7 +165,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(html, 'diamond');
+            const result = await parser.parseSearchResults(html, 'diamond');
 
             expect(result.success).toBe(true);
             expect(result.data.results).toHaveLength(1);
@@ -295,7 +302,7 @@ describe('SearchResultsParser', () => {
     });
 
     describe('integration scenarios', () => {
-        it('should handle complex search results with mixed content', () => {
+        it('should handle complex search results with mixed content', async () => {
             const complexHtml = `
                 <html>
                 <body>
@@ -340,7 +347,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(complexHtml, '钻石');
+            const result = await parser.parseSearchResults(complexHtml, '钻石');
 
             expect(result.success).toBe(true);
             expect(result.data.results).toHaveLength(3);
@@ -371,7 +378,7 @@ describe('SearchResultsParser', () => {
             expect(suggestions).toContain('钻石矿');
         });
 
-        it('should handle edge cases gracefully', () => {
+        it('should handle edge cases gracefully', async () => {
             const edgeCaseHtml = `
                 <html>
                 <body>
@@ -399,7 +406,7 @@ describe('SearchResultsParser', () => {
                 </html>
             `;
 
-            const result = parser.parseSearchResults(edgeCaseHtml, 'test');
+            const result = await parser.parseSearchResults(edgeCaseHtml, 'test');
 
             expect(result.success).toBe(true);
             // Should only include results with valid titles
