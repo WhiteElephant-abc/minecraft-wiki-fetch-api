@@ -53,4 +53,19 @@ describe('App Basic Tests', () => {
       expect(response.body.error).toHaveProperty('code', 'NOT_FOUND');
     });
   });
+
+  describe('CORS security', () => {
+    it('should not reflect arbitrary origin when allowedOrigins is restricted', async () => {
+      const original = process.env.ALLOWED_ORIGINS;
+      process.env.ALLOWED_ORIGINS = 'https://example.com';
+      delete require.cache[require.resolve('../src/config')];
+      delete require.cache[require.resolve('../src/index')];
+      const app = require('../src/index');
+      const res = await request(app)
+        .get('/api')
+        .set('Origin', 'https://evil.com');
+      expect(res.headers['access-control-allow-origin']).not.toBe('https://evil.com');
+      process.env.ALLOWED_ORIGINS = original;
+    });
+  });
 });

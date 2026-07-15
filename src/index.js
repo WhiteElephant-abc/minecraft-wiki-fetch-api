@@ -49,22 +49,22 @@ app.use(helmet({
 // CORS with error handling
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
     const allowedOrigins = config.security.allowedOrigins;
-    
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes('*')) {
+      logger.warn('CORS allowedOrigins is "*" but credentials:true — refusing wildcard; set ALLOWED_ORIGINS explicitly');
+      return callback(null, false);
+    }
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
     const error = new Error(`Origin ${origin} not allowed by CORS policy`);
     error.statusCode = 403;
     callback(error);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For', 'X-API-Key']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key']
 }));
 app.use(corsErrorHandler);
 
