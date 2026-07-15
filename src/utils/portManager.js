@@ -205,28 +205,42 @@ async function startServerSafely(app, preferredPort, host = '0.0.0.0', options =
       // Try to start the server immediately
       let startupTimeoutId = null;
       let onError = null;
+      let serverInstance = null;
+
+      const cleanup = () => {
+        if (startupTimeoutId) {
+          clearTimeout(startupTimeoutId);
+          startupTimeoutId = null;
+        }
+        if (serverInstance && onError) {
+          serverInstance.removeListener('error', onError);
+          onError = null;
+        }
+      };
+
       const server = await new Promise((resolve, reject) => {
-        const serverInstance = app.listen(currentPort, host, (err) => {
+        serverInstance = app.listen(currentPort, host, (err) => {
           if (err) {
+            cleanup();
             reject(err);
             return;
           }
+          cleanup();
           resolve(serverInstance);
         });
 
         onError = (error) => {
+          cleanup();
           reject(error);
         };
         serverInstance.on('error', onError);
 
         // Set a timeout for server startup
         startupTimeoutId = setTimeout(() => {
+          cleanup();
           reject(new Error(`Server startup timeout on port ${currentPort}`));
         }, 3000);
       });
-
-      clearTimeout(startupTimeoutId);
-      server.removeListener('error', onError);
 
       // Success!
       if (logAttempts && currentPort !== preferredPort) {

@@ -7,6 +7,7 @@ const { Ratelimit } = require('@upstash/ratelimit');
 const { Redis } = require('@upstash/redis');
 const config = require('../config');
 const { RateLimitError } = require('../utils/errors');
+const { logger } = require('../utils/logger');
 const { getClientIdentifier } = require('./auth');
 
 // 限流器实例缓存
@@ -170,7 +171,7 @@ async function rateLimitMiddleware(req, res, next) {
 
     return next();
   } catch (err) {
-    console.error('Rate limiter error:', err);
+    logger.error('Rate limiter error', { error: err.message, stack: err.stack });
     const error = new RateLimitError('限流服务暂时不可用，请稍后再试');
     error.details = { retryAfter: Math.ceil(config.rateLimit.windowMs / 1000) };
     res.setHeader('Retry-After', error.details.retryAfter);
